@@ -58,7 +58,7 @@ GIT_URL <- getPermlink(
     repository = getRepo(
         repository = GIT_REPO, 
         ref="branch", 
-        refName='master'), 
+        refName='main'), 
     repositoryPath = SCRIPT_PATH)
 
 #' function to log remove records

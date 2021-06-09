@@ -71,7 +71,7 @@ get_git_url <- function(git_repo, script_path){
         repository = githubr::getRepo(
             repository = git_repo, 
             ref="branch", 
-            refName='master'), 
+            refName='main'), 
         repositoryPath = script_path)
     
 }

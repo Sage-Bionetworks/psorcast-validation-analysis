@@ -34,7 +34,7 @@ setGithubToken(readLines(GIT_TOKEN_PATH))
 GIT_URL <- githubr::getPermlink(
   GIT_REPO, repositoryPath = SCRIPT_PATH,
   ref = "branch",
-  refName = 'master')
+  refName = 'main')
 
 ##############
 # global parameters
