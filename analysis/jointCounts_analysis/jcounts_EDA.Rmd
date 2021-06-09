@@ -1,0 +1,148 @@
+```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+library(synapser)
+library(knit2synapse)
+library(tidyverse)
+library(dplyr)
+library(githubr)
+library(ggpval)
+library(ggExtra)
+library(ggpubr)
+library(data.table)
+library(DescTools)
+
+knitr::opts_chunk$set(cache = FALSE)
+synLogin()
+```
+
+## About
+This markdown is based on Psorcast Joint Counts Analysis where we try to assess the comparison of our digital assessment to the gold standard (clinical) based on the reported tender joint counts. Report will be assessing based of correlation (Spearman and Lin's CCC) and Bland-altman. 
+
+```{r, echo = FALSE}
+MERGED_FEATURES <- "syn25832975"
+```
+
+```{r, echo = FALSE}
+data <- fread(synGet(MERGED_FEATURES)$path) %>%
+    tidyr::drop_na(dig_jc_counts, gs_jc_counts)
+```
+
+### Diagnosis Report
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+diagnosis_breakdown <- data %>% 
+                 dplyr::group_by(diagnosis) %>% 
+                 dplyr::summarise(n = n()) %>%
+                 dplyr::select(status = diagnosis, everything())
+
+gender_break_down <- data %>% 
+                 dplyr::group_by(sex, diagnosis) %>% 
+                 dplyr::summarise(n = n()) %>%
+                 dplyr::select(sex, status = diagnosis, everything())
+
+knitr::kable(list(diagnosis_breakdown, gender_break_down))
+```
+
+### Demographics for Analysis
+```{r, echo = FALSE, fig.width = 10, fig.height = 5, warning = FALSE, message = FALSE}
+ggplot(data=data, 
+       aes(x=diagnosis, y = age, fill = sex)) +
+    geom_boxplot(width = 0.5, alpha = 0.5) +
+    geom_jitter(position=position_dodge(0.5)) + 
+    scale_x_discrete(limits=c("Control", "PsO", "PsA")) +
+    labs(title = "Demographics Distribution") +
+    labs(subtitle = "Boxplot of Age vs Diagnosis (Differentiated by Gender)",
+         colour = "gray") +
+    theme_minimal() +  
+    theme(plot.subtitle = element_text(family = "sans", size = 15),
+          plot.title = element_text(family = "sans", size = 20))
+```
+
+### Comparing JCounts witht PsA and PsO Statuses
+```{r, echo = FALSE, fig.width = 10, fig.height = 5, warning = FALSE, message = FALSE}
+digital <- ggplot(data %>% dplyr::filter(diagnosis %in% c('PsO', 'PsA')), 
+       aes(x = dig_jc_counts, fill = diagnosis)) + 
+    geom_density(alpha = 0.3) +
+    theme_minimal() +
+    labs(title = "Dig. Joint Counts") +
+    xlim(-10,100) +
+    theme(plot.title = element_text(size = 15, face = "bold"))
+
+gs <- ggplot(data %>% dplyr::filter(diagnosis %in% c('PsO', 'PsA')), 
+       aes(x = gs_jc_counts, fill = diagnosis)) + 
+    geom_density(alpha = 0.3) +
+    theme_minimal() +
+    labs(title = "Gold Standard Joint Counts") +
+    xlim(-10,100) +
+    theme(plot.title = element_text(size = 15, face = "bold"))
+
+patchwork::wrap_plots(digital, gs, guides = 'collect')
+```
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+# get correlation values
+cc_corr <- DescTools::CCC(
+    data$dig_jc_counts, 
+    data$gs_jc_counts, 
+    ci = "z-transform", 
+    conf.level = 0.95, 
+    na.rm = FALSE) %>% 
+    .$rho.c %>% .$est
+
+sp_corr <- cor.test(
+    data$dig_jc_counts, 
+    data$gs_jc_counts, 
+    method = "spearman",
+    exact=FALSE)
+
+label <- glue::glue("Spearman = {spearman_corr}, P = {spearman_p}\n",
+                    "Lin's CCC = {ccc}",
+                    spearman_corr = round(sp_corr$estimate[[1]], 2),
+                    spearman_p = formatC(sp_corr$p.value, 
+                                         digit=2, 
+                                         format = "e"),
+                    ccc = round(cc_corr, 2))
+
+```
+
+
+### Comparing Digital vs Gold Standard Measures
+```{r, echo = FALSE, fig.width = 15, fig.height = 6, warning = FALSE, message = FALSE}
+
+#' joint pain
+joint_plot_jcounts <- (ggscatter(
+    data, 
+    color = "black",
+    x = "dig_jc_counts", 
+    y = "gs_jc_counts", 
+    add = "reg.line", 
+    size = 2,
+    add.params = list(color = "skyblue3", fill = "lightgray"),
+    conf.int = TRUE,
+    fullrange = T) + 
+        scale_x_continuous(name = "Digital") +
+        annotate("text", label = label, x = 10, y = 20, 
+                 size = 4) +
+        scale_y_continuous(name = "Gold Standard") + 
+        labs(title = "Joint Counts Correlation Plot") +
+        theme_minimal() +
+        theme(plot.title = element_text(
+            family = "sans", vjust = -1,
+            size = 20, margin=margin(0,0,10,0)))) %>%
+    ggExtra::ggMarginal(., type = "densigram", 
+                        xparams = list(fill = "gray"), 
+                        yparams = list(fill = "gray"))
+
+bland_altman_jcount <- blandr::blandr.draw(
+    data$dig_jc_counts, 
+    data$gs_jc_counts, 
+    ciDisplay = FALSE,
+    point_size = 2) + 
+    scale_y_continuous(name = "Difference", expand=c(0,0), limits=c(-20,50)) +
+    labs(title = "Joint Counts Bland-Altman Plot") + 
+    theme_minimal() + 
+    theme(plot.title = element_text(family = "sans", vjust = -1, 
+                                    size = 20, margin=margin(0,0,60,0)))
+
+patchwork::wrap_plots(joint_plot_jcounts, bland_altman_jcount)
+```
+

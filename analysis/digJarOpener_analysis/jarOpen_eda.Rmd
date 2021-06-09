@@ -1,0 +1,354 @@
+```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+###########################################################
+## Required libraries and analysis functions
+###########################################################
+library(tidyverse)
+library(githubr)
+library(knitr)
+library(ggpubr)
+library(synapser)
+
+synLogin()
+
+options(xtable.type="html")
+knitr::opts_chunk$set(
+  echo=FALSE,
+  warning=FALSE,
+  message=FALSE,
+  error = FALSE,
+  tidy = FALSE,
+  cache = TRUE,
+  cache.lazy = FALSE)
+```
+
+```{r required functions, include=FALSE, echo=FALSE, warning=FALSE}
+##############
+# Required Functions
+##############
+getScoreFromText <- function(text_){
+  if(is.na(text_)){
+    return(0)
+  }else if(text_ == 'both'){
+    return(2)
+  }else{
+    return(1)
+  }
+}
+
+getTimeFromDat <- function(dat.location){
+  dat <- jsonlite::fromJSON(dat.location %>% as.character()) %>% 
+    dplyr::filter(sensorType == 'gyro')
+  dat$timestamp <- dat$timestamp - min(dat$timestamp, na.rm = T)
+  return(max(dat$timestamp))
+}
+
+getMaxSpeed <- function(dat.location){
+  dat <- jsonlite::fromJSON(dat.location %>% as.character()) %>% 
+    dplyr::filter(sensorType == 'gyro')
+  dat$timestamp <- dat$timestamp - min(dat$timestamp, na.rm = T)
+  return(max(dat$z))
+}
+```
+
+```{r Download data from Synapse, echo=FALSE, warning=FALSE, include=FALSE}
+##############
+# Download data from Synapse and extract features/columns
+##############
+demo.syn.id <- 'syn25006883'
+demo.tbl.syn <- synapser::synTableQuery(paste0('Select * from ', demo.syn.id))
+demo.tbl <- demo.tbl.syn$asDataFrame() %>% 
+  dplyr::rowwise() %>% 
+  dplyr::mutate(createdOn = as.Date(Date)) %>% 
+  dplyr::ungroup()
+
+joint.pain.syn.id <- 'syn25830490'
+joint.pain.feat <- synapser::synGet(joint.pain.syn.id)$path %>% 
+  read.csv(., sep = '\t') %>% 
+  dplyr::filter(!(recordId %in% c('Wl7reU7f9fxfnERCdSJv1XNE'))) %>% 
+  dplyr::rowwise() %>% 
+  dplyr::mutate(createdOn = as.Date(createdOn)) %>% 
+  dplyr::ungroup()
+
+feat.syn.id <- 'syn22337137'
+feat.tbl <- synapser::synGet(feat.syn.id)$path %>% 
+  read.csv(., sep = '\t') %>% 
+  dplyr::filter(!(recordId %in% c('6GLeH138mF6onoMxAQu7Ugyl'))) %>% 
+  dplyr::rowwise() %>% 
+  dplyr::mutate(createdOn = as.Date(createdOn)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::left_join(demo.tbl %>% 
+                     dplyr::select(participantId,
+                                   Diagnosis,
+                                   age = Age,
+                                   sex = Sex,
+                                   # createdOn,
+                                   BSA = `Overall BSA (%)`) %>% 
+                     unique()) %>% 
+  # na.omit() %>%
+  dplyr::rowwise() %>% 
+  dplyr::mutate(Diagnosis = stringr::str_remove(Diagnosis, ' ')) %>% 
+  dplyr::mutate(Diagnosis = stringr::str_remove(Diagnosis, ',')) %>% 
+  dplyr::mutate(djo_rightRatio = djo_rightCounter/djo_rightClockwise,
+                djo_leftRatio = djo_leftCounter/djo_leftClockwise) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::left_join(joint.pain.feat %>% 
+                     dplyr::select(participantId,
+                                   createdOn,
+                                   # recordId,
+                                   # dig_joint_pain_counts,
+                                   dig_jc_status_wrist,
+                                   dig_jc_status_shoulder,
+                                   dig_jc_status_elbow) %>% 
+                     unique()) %>% 
+  droplevels() %>% 
+  unique() %>% 
+  dplyr::filter(!(participantId == 'SITE1_008' & createdOn == as.Date('2020-03-04') & age == 30)) %>% 
+  dplyr::filter(!(participantId == 'SITE1_008' & createdOn == as.Date('2020-09-02') & age == 29)) %>% 
+  dplyr::filter(!(participantId == 'subject 37' & createdOn == as.Date('2020-01-28') & BSA == 0))
+
+feat.tbl$Diagnosis <- factor(feat.tbl$Diagnosis, levels = c('Control', 'PsO', 'PsA') )
+
+
+feat.tbl <- feat.tbl %>% 
+  dplyr::rowwise() %>% 
+  dplyr::mutate(upper_body_pain = !(is.na(dig_jc_status_wrist) & is.na(dig_jc_status_elbow) & is.na(dig_jc_status_shoulder) )) %>% 
+  dplyr::ungroup()
+
+feat.temp <- feat.tbl %>% 
+  dplyr::select(participantId, Diagnosis, recordId, 
+                createdOn, BSA, age,upper_body_pain,
+                djo_inward_ratio, djo_outward_ratio,
+                djo_leftCounter, djo_leftClockwise,
+                djo_rightCounter, djo_rightClockwise) %>% 
+  tidyr::gather(key, value, -participantId, -createdOn, -recordId, -Diagnosis, -BSA, -age, -upper_body_pain)
+
+```
+
+```{r plots, warning=FALSE, echo=FALSE}
+## plots
+ratios.tbl <- feat.temp %>% 
+  dplyr::filter(key %in% c('djo_inward_ratio', 'djo_outward_ratio',
+                           'djo_rightRatio', 'djo_leftRatio')) %>% 
+  dplyr::group_by(participantId, key, Diagnosis, BSA, age, upper_body_pain) %>% 
+  dplyr::summarise(value = mean(value)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(fortyOrPlus = !(age<40 ))
+
+rotation.angles.tbl <- feat.temp %>% 
+  dplyr::filter((key %in% c('djo_leftCounter', 'djo_leftClockwise',
+                            'djo_rightCounter', 'djo_rightClockwise'))) %>% 
+  dplyr::group_by(participantId, key, Diagnosis, BSA, age, upper_body_pain) %>% 
+  dplyr::summarise(value = mean(value)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(fortyOrPlus = !(age<40 ))
+
+
+ggplot2::ggplot(ratios.tbl, aes(x = key,y=value, color = upper_body_pain)) + geom_boxplot() + theme_minimal() +
+  xlab('Metric') + ylab('Ratio (max/min)') + ggtitle('Rotation Ratios vs Upper Body Pain (True/False)')
+ggplot2::ggplot(rotation.angles.tbl, aes(x = key,y=value, color = upper_body_pain)) + geom_boxplot() + theme_minimal() +
+  xlab('Metric') + ylab('Angle of Rotation') + ggtitle('Rotation Angles vs Upper Body Pain (True/False)')
+
+ggplot2::ggplot(ratios.tbl, aes(x = key, y = value, fill = upper_body_pain)) + facet_wrap(~fortyOrPlus) +
+  geom_boxplot()+ theme_minimal() +
+  xlab('Metric') + ylab('Value') + ggtitle('Rotation Ratios vs Age(Forty plus - False/True) and Upper Body Pain (True/False)')
+ggplot2::ggplot(rotation.angles.tbl, aes(y = value, fill = upper_body_pain, color = fortyOrPlus)) + facet_wrap(~key) +
+  geom_boxplot()+ theme_minimal() +
+  ylab('Angle of Rotation') + ggtitle('Rotation Angles vs Age(Forty plus - False/True) and Upper Body Pain (True/False)')
+
+
+## Total rotation
+rotation.angles.tbl.all <- feat.tbl %>% 
+  dplyr::rowwise() %>% 
+  dplyr::mutate(nett_rotation = sum(djo_leftCounter, djo_rightCounter,
+                                    djo_leftClockwise, djo_rightClockwise, na.rm = T)) %>%
+  dplyr::mutate(
+    dig_pain_score_wrist = getScoreFromText(dig_jc_status_wrist),
+    dig_pain_score_elbow = getScoreFromText(dig_jc_status_elbow),
+    dig_pain_score_shoulder = getScoreFromText(dig_jc_status_shoulder)) %>% 
+  dplyr::mutate(dig_pain_score = sum(dig_pain_score_wrist,dig_pain_score_elbow,dig_pain_score_shoulder)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(participantId, Diagnosis, BSA, age, nett_rotation, dig_pain_score, upper_body_pain ) %>% 
+  dplyr::mutate(fortyOrPlus = !(age<40))
+
+
+ggplot2::ggplot(rotation.angles.tbl.all, aes(x = upper_body_pain, y = nett_rotation)) +
+  geom_boxplot() + theme_minimal() + ylab('Total Rotation')
+
+## Age stats
+age.tbl <- feat.tbl %>% 
+  dplyr::select(participantId, age, sex) %>% 
+  unique() %>% 
+  dplyr::filter(!(participantId == 'SITE1_008' & age == 29))
+
+hist(age.tbl$age)
+
+ggplot2::ggplot(age.tbl, aes(x = age)) + geom_histogram(binwidth = 5, color="black", fill="white") +
+  theme_minimal() + ggtitle('Age Distribution')
+
+
+###### Time taken to do a test
+digitalJarOpen.syn.id <- 'syn22281747'
+digitalJarOpen.syn <- synapser::synTableQuery(paste0('select * from ', digitalJarOpen.syn.id))
+digitalJarOpen.tbl <- digitalJarOpen.syn$asDataFrame()
+
+digitalJarOpen.syn.id.og <- 'syn21313962'
+digitalJarOpen.syn.og <- synapser::synTableQuery(paste0('select * from ', digitalJarOpen.syn.id.og))
+digitalJarOpen.tbl.og <- digitalJarOpen.syn.og$asDataFrame()
+
+## Download required columns i,e the JSON files
+columnsToDownload = c("leftClockwise_motion.json",
+                      "leftCounter_motion.json",
+                      "rightClockwise_motion.json",
+                      "rightCounter_motion.json") 
+
+digital.json.loc = lapply(columnsToDownload, function(col.name){
+  tbl.files = synapser::synDownloadTableColumns(digitalJarOpen.syn.og, col.name) %>%
+    lapply(function(x) data.frame(V1 = x)) %>% 
+    data.table::rbindlist(idcol = col.name) %>%
+    plyr::rename(c('V1' = gsub('.json','.fileLocation', col.name)))
+})
+
+# Append fileLocation to table
+digitalJarOpen.tbl.og.meta = data.table::rbindlist(list(digitalJarOpen.tbl.og %>%
+                                                          dplyr::left_join(do.call(cbind, digital.json.loc[1]))),
+                                                   use.names = T, fill = T) %>%
+  as.data.frame
+
+for(i in 2:4){
+  digitalJarOpen.tbl.og.meta = data.table::rbindlist(list(digitalJarOpen.tbl.og.meta %>%
+                                                            dplyr::left_join(do.call(cbind, digital.json.loc[i]))),
+                                                     use.names = T, fill = T) %>%
+    as.data.frame
+}
+
+
+feat.tbl.meta <- feat.tbl %>% 
+  dplyr::left_join(digitalJarOpen.tbl.og.meta %>% 
+                     dplyr::select(participantId = participantID,
+                                   recordId,
+                                   leftCounter_motion.fileLocation,
+                                   rightCounter_motion.fileLocation,
+                                   leftClockwise_motion.fileLocation,
+                                   rightClockwise_motion.fileLocation)) %>% 
+  dplyr::rowwise() %>% 
+  dplyr::mutate(leftCounterTime = getTimeFromDat(leftCounter_motion.fileLocation),
+                leftClockwiseTime = getTimeFromDat(leftClockwise_motion.fileLocation),
+                rightCounterTime = getTimeFromDat(rightCounter_motion.fileLocation),
+                rightClockwiseTime = getTimeFromDat(rightClockwise_motion.fileLocation),
+                leftCounterMaxSpeed = getMaxSpeed(leftCounter_motion.fileLocation),
+                leftClockwiseMaxSpeed = getMaxSpeed(leftClockwise_motion.fileLocation),
+                rightCounterMaxSpeed = getMaxSpeed(rightCounter_motion.fileLocation),
+                rightClockwiseMaxSpeed = getMaxSpeed(rightClockwise_motion.fileLocation))
+
+
+
+ggplot2::ggplot(feat.tbl.meta, aes(y = leftCounterMaxSpeed, fill = Diagnosis)) + geom_boxplot() + ylim(c(0,10))
+
+
+## plots
+for(i in seq(nrow(feat.tbl.meta))){
+  temp.leftCounter <- jsonlite::fromJSON(feat.tbl.meta$rightClockwise_motion.fileLocation[i] %>% 
+                                           as.character()) %>% 
+    dplyr::filter(sensorType == 'gyro')
+  
+  if(is.na(feat.tbl.meta$Diagnosis[i])){
+    col_ = 'black'
+  }else if(feat.tbl.meta$Diagnosis[i] == 'Control'){
+    col_ = 'red'
+  }else if(feat.tbl.meta$Diagnosis[i] == 'PsO'){
+    col_ = 'blue'
+  }else{
+    col_ = 'black'
+  }
+  
+  if(i == 1){
+  plot(temp.leftCounter$timestamp,  cumsum(temp.leftCounter$z)*180/pi/100,
+       type = 'l', xlim = c(0,10),ylim = c(-400,50), col = col_,
+       xlab = 'time(s)', ylab = 'degrees', main = 'Right Clockwise displacement over time')
+    print(i)
+  }else{
+    lines(temp.leftCounter$timestamp, cumsum(temp.leftCounter$z)*180/pi/100, type = 'l', col = col_)
+    # print('kj')
+  }
+  
+  
+}
+
+legend(8, -200, legend=c("Control", "PsO", "PsA"),
+       col=c("red", "blue", "black"), lty=1, cex=0.8,
+       title="Line types", text.font=4, bg='white')
+
+## Accel plots
+# Pick a subject
+# plot their leftCounter, rightClockwise
+# leftClockwise, rightCounter
+
+ii = 12
+
+# leftCounter
+temp.dat <- jsonlite::fromJSON(feat.tbl.meta$leftCounter_motion.fileLocation[ii] %>% 
+                                 as.character()) %>% 
+  dplyr::filter(sensorType == 'gyro') %>% 
+  dplyr::mutate(timestamp = (timestamp - min(timestamp)))
+
+p1 <- ggplot2::ggplot(temp.dat, aes(x = timestamp, y = z)) + geom_line() + theme_minimal() +
+  ylab('rad/s') + xlab('time(s)') + ggtitle('Z-axis: leftCounter')
+# p1
+
+# rightClockwise
+temp.dat <- jsonlite::fromJSON(feat.tbl.meta$rightClockwise_motion.fileLocation[ii] %>% 
+                                 as.character()) %>% 
+  dplyr::filter(sensorType == 'gyro') %>% 
+  dplyr::mutate(timestamp = (timestamp - min(timestamp)))
+
+p2 <- ggplot2::ggplot(temp.dat, aes(x = timestamp, y = z)) + geom_line() + theme_minimal() +
+  ylab('rad/s') + xlab('time(s)') + ggtitle('Z-axis: rightClockwise')
+# p2
+
+
+# leftClockwise
+temp.dat <- jsonlite::fromJSON(feat.tbl.meta$leftClockwise_motion.fileLocation[ii] %>% 
+                                 as.character()) %>% 
+  dplyr::filter(sensorType == 'gyro') %>% 
+  dplyr::mutate(timestamp = (timestamp - min(timestamp)))
+
+p3 <- ggplot2::ggplot(temp.dat, aes(x = timestamp, y = z)) + geom_line() + theme_minimal() +
+  ylab('rad/s') + xlab('time(s)') + ggtitle('Z-axis: leftClockwise')
+# p3
+
+# rightCounter
+temp.dat <- jsonlite::fromJSON(feat.tbl.meta$rightCounter_motion.fileLocation[ii] %>% 
+                                 as.character()) %>% 
+  dplyr::filter(sensorType == 'gyro') %>% 
+  dplyr::mutate(timestamp = (timestamp - min(timestamp)))
+
+p4 <- ggplot2::ggplot(temp.dat, aes(x = timestamp, y = z)) + geom_line() + theme_minimal() +
+  ylab('rad/s') + xlab('time(s)') + ggtitle('Z-axis: rightCounter')
+# p4
+
+ggpubr::ggarrange(p1,p2,p3,p4, ncol = 2, nrow = 2)
+
+
+## time plots
+time.tbl <- feat.tbl.meta %>%  
+  dplyr::select(participantId, Diagnosis, recordId, createdOn, BSA, age,
+                leftCounterTime, rightClockwiseTime,
+                rightCounterTime, leftClockwiseTime) %>% 
+  tidyr::gather(key, value, -participantId, -createdOn, -recordId, -Diagnosis, -BSA, -age)
+
+ggplot2::ggplot(time.tbl, aes(y = value, fill = Diagnosis)) + facet_wrap(~key) + geom_boxplot() +ylim(c(0,15)) +
+  theme_minimal() + ylab('sec') + ggtitle('Comparison of test times') +
+  theme(axis.text=element_text(size=14),axis.title=element_text(size=14,face="bold"))
+
+
+## max speed plots
+speed.tbl <- feat.tbl.meta %>%  
+  dplyr::select(participantId, Diagnosis, recordId, createdOn, BSA, age,
+                leftCounterMaxSpeed, rightClockwiseMaxSpeed,
+                rightCounterMaxSpeed, leftClockwiseMaxSpeed) %>% 
+  tidyr::gather(key, value, -participantId, -createdOn, -recordId, -Diagnosis, -BSA, -age)
+
+ggplot2::ggplot(speed.tbl, aes(y = value, fill = Diagnosis)) + facet_wrap(~key) + geom_boxplot()  +
+  theme_minimal() + ylab('rad/s') + ggtitle('Comparison of Max rotation speeds') +
+  theme(axis.text=element_text(size=14),axis.title=element_text(size=14,face="bold"))
+```
