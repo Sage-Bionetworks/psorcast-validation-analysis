@@ -1,4 +1,4 @@
 default:
     git:
-        repo: "arytontediarjo/psorcastValidationAnalysis"
+        repo: "arytontediarjo/psorcast-validation-analysis"
         token_path: "~/git_token.txt"
