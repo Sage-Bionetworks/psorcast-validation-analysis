@@ -1,0 +1,187 @@
+```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+library(synapser)
+library(knit2synapse)
+library(tidyverse)
+library(dplyr)
+library(githubr)
+library(ggplot2)
+library(ggpval)
+library(ggExtra)
+library(ggpubr)
+library(data.table)
+library(patchwork)
+
+knitr::opts_chunk$set(cache = FALSE)
+synLogin()
+```
+
+## About
+In this assesssment we will be comparing the two groups of reported pain/no-pain using a boxplot, which we will compare it based on gait metrics based on [pdkit features](https://pdkit.readthedocs.io/en/latest/gait.html), specificially calculating step-step duration and symmetry ratio from our Psorcast cohort. Assessment are taken based on x-axis measurements, which aligns to our Walk 30 secs activity that prompts user to put their phone inside pocket verticall (walk is going in the x-axis direction of the phone)
+
+```{r, echo = FALSE}
+MERGED_FEATURES <- "syn25832975"
+```
+
+```{r echo = FALSE}
+get_feature_boxplot <- function(data, feature, title, x, y){
+    ggplot(data=data, 
+       aes_string(
+           x = "has_lower_pain", 
+           y = feature,
+           fill = "has_lower_pain")) +
+    geom_boxplot(
+        alpha =  0.5,
+        width = 0.5/length(unique(data$has_lower_pain))) +
+    geom_dotplot(binaxis='y', 
+                 stackdir='center', 
+                 dotsize=0.7, 
+                 fill = "black", 
+                 alpha = 0.5) +
+    ggpubr::stat_compare_means() +
+    labs(
+        title = title,
+        x = x, 
+        y = y) +
+    theme_minimal() +  
+    theme(plot.subtitle = 
+              element_text(family = "sans", size = 4,),
+          axis.text.x = 
+              element_blank())
+}
+```
+
+```{r, echo = FALSE}
+data <-  fread(synGet(MERGED_FEATURES)$path)
+```
+
+```{r, echo = FALSE}
+data <-  fread(synGet(MERGED_FEATURES)$path)
+cleaned.data <- data %>% 
+    drop_na(c("x_step_duration_md",
+              "x_step_duration_iqr",
+              "x_stride_deviation_md",
+              "x_stride_deviation_iqr",
+              "x_cadence_md",
+              "x_cadence_iqr",
+              "x_symmetry_md",
+              "x_symmetry_iqr")) %>%
+    dplyr::mutate(
+        complete_case_joint_pain_list = gs_jc_joint_list,
+        complete_case_swollen_joint_list = gs_swell_joint_list) %>%
+    dplyr::mutate(
+        complete_case_joint_pain_list = coalesce(
+            complete_case_joint_pain_list,  tjc_backup),
+        complete_case_swollen_joint_list = coalesce(
+            complete_case_swollen_joint_list,  sjc_backup)) %>%
+    dplyr::mutate(
+        has_lower_pain = case_when(
+            stringr::str_detect(
+                complete_case_joint_pain_list, 
+                "knee|hip|ankle") ~ "Has Lower Joint Pain", 
+            TRUE ~ "No Lower Joint Pain"),
+        knee_pain = case_when(
+            stringr::str_detect(
+                complete_case_joint_pain_list, "knee") ~ "Knee Pain", 
+            TRUE ~  "No Lower Joint Pain"),
+        hip_pain = case_when(
+            stringr::str_detect(
+                complete_case_joint_pain_list, "hip") ~ "Hip Pain", 
+            TRUE ~  "No Lower Joint Pain"),
+        ankle_pain = case_when(
+            stringr::str_detect(
+                complete_case_joint_pain_list, "ankle") ~ "Ankle Pain", 
+            TRUE ~ "No Lower Joint Pain")) %>%
+    dplyr::select(
+        participantId, age, sex, diagnosis, 
+        matches("pain|step|stride|symmetry|cadence"))
+```
+
+### Samples of Reported Pain/No-Pain
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+pain_no_pain <- cleaned.data %>% 
+                 dplyr::group_by(has_lower_pain) %>% 
+                 dplyr::summarise(n = n()) %>%
+                 dplyr::select(status = has_lower_pain, everything())
+
+gender_break_down <- cleaned.data %>% 
+                 dplyr::group_by(sex, has_lower_pain) %>% 
+                 dplyr::summarise(n = n()) %>%
+                 dplyr::select(sex, status = has_lower_pain, everything())
+
+knitr::kable(list(pain_no_pain, gender_break_down))
+```
+
+### Demographics Distribution
+```{r, echo = FALSE, fig.width = 10, fig.height = 5, warning = FALSE, message = FALSE}
+ggplot(data=cleaned.data %>% dplyr::filter(sex != ""), 
+       aes(x=has_lower_pain, y = age, fill = sex)) +
+    geom_boxplot(width = 0.5, alpha = 0.5) +
+    geom_jitter(position=position_dodge(0.5)) +
+    labs(title = "Demographics Distribution (Differentiated by Gender)") +
+    labs(subtitle = "Boxplot of Age vs Lower Joint Pains",
+         colour = "gray") +
+    theme_minimal() +  
+    theme(plot.subtitle = element_text(family = "sans", size = 15),
+          plot.title = element_text(family = "sans", size = 20))
+```
+
+```{r echo = FALSE}
+# get features mapping
+features_mapping <- list(
+    x_cadence_md = list(title = "Median Cadence (Steps/Seconds)",
+                        x = "",
+                        y = "Steps/Seconds"),
+    x_cadence_iqr = list(title = "IQR Cadence (Steps/Seconds)",
+                    x = "",
+                    y = "Steps/Seconds"),
+    x_step_duration_md = list(title = "Median Step Duration",
+                    x = "",
+                    y = "Seconds"),
+    x_step_duration_iqr = list(title = "IQR Step Duratioin",
+                    x = "",
+                    y = "Seconds"),
+    x_step_deviation_md = list(title = "Median Step Deviation",
+                    x = "",
+                    y = "Seconds"),
+    x_step_deviation_iqr = list(title = "IQR Step Deviation",
+                    x = "",
+                    y = "Seconds"),
+    x_stride_duration_md = list(title = "Median Stride Duration",
+                    x = "",
+                    y = "Seconds"),
+    x_stride_duration_iqr = list(title = "IQR Stride Duratioin",
+                    x = "",
+                    y = "Seconds"),
+    x_stride_deviation_md = list(title = "Median Stride Deviation",
+                    x = "",
+                    y = "Seconds"),
+    x_stride_deviation_iqr = list(title = "IQR Stride Deviation",
+                    x = "",
+                    y = "Seconds"),
+    x_symmetry_md = list(title = "Median Walk Symmetry",
+                    x = "",
+                    y = "% Symmetric"),
+    x_symmetry_iqr = list(title = "IQR Walk Symmetry",
+                    x = "",
+                    y = "% Symmetric")
+    
+)
+```
+
+
+### Walk 30secs Feature Comparison for Lower Joints Pain/No-Pain
+```{r echo = FALSE, fig.width = 13, fig.height = 18, warning = FALSE, message = FALSE}
+purrr::map(names(features_mapping), function(feature){
+    feature_info <- features_mapping[[feature]]
+    get_feature_boxplot(
+        data = cleaned.data,
+        feature = feature,
+        title = feature_info$title,
+        x = feature_info$x,
+        y = feature_info$y)}) %>% 
+    patchwork::wrap_plots(ncol = 2, 
+                          guides = "collect",
+                          heights = 5)
+```
+
+

@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  rstudio:
+    image: arytontediarjo/psorcast-validation-analysis
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: psorcast
+    env_file:
+      - .env
+    volumes:
+      - "${PATH_TO_SYNAPSE_CACHE}:/root/.synapseCache"
+      - "${PATH_TO_SYNAPSE_CONFIG}:/root/.synapseConfig"
+      - "${PATH_TO_GIT_TOKEN}:/root/git_token.txt"
+    ports:
+      - "${HOST_PORT}:8787"

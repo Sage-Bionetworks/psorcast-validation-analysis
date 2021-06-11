@@ -1,0 +1,113 @@
+```{r libs.and.functions, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+###########################################################
+## Required libraries and analysis functions
+###########################################################
+library(tidyverse)
+library(githubr)
+library(knitr)
+library(ggpubr)
+library(synapser)
+library(data.table)
+
+synapser::synLogin()
+knitr::opts_chunk$set(cache = FALSE)
+```
+
+
+```{r Download data from Synapse, echo=FALSE, warning=FALSE, include=FALSE}
+# All data is from the Psorcast Validation Analysis Project (syn22276946)
+## PPACMAN assessor data - curated
+demo_syn_id <- 'syn22337133'
+demo_tbl <- fread(synGet(demo_syn_id)$path)
+```
+
+
+#### Age Data
+```{r Age plots,echo=FALSE, warning=FALSE,  fig.height=15, fig.width=12}
+
+## Age distribution graphs
+age.tbl <- demo_tbl %>% 
+  dplyr::select(participantId, age, sex, diagnosis) %>% 
+  unique() %>% 
+  na.omit()
+p1 = ggplot2::ggplot(age.tbl, aes(x = age)) + geom_histogram(binwidth = 5, position = 'dodge') + theme_minimal() + ggtitle('Age (5 yr binwidth)')
+
+p2 = ggplot2::ggplot(age.tbl, aes(x = age)) + geom_histogram(binwidth = 5, position = 'dodge') + facet_wrap(~sex)+theme_minimal() + ggtitle('Age (5 yr binwidth)')
+
+p3 = ggplot2::ggplot(age.tbl, aes(x = age)) + geom_histogram(binwidth = 5, position = 'dodge') + facet_wrap(~diagnosis)+theme_minimal() + ggtitle('Age stratified by Diagnosis (5 yr binwidth)')
+
+ggpubr::ggarrange(p1,p2,p3, ncol = 1)
+```
+
+#### Overall Diagnosis numbers
+```{r Diagnosis and sex plots, echo=FALSE, warning=FALSE,fig.height=8, fig.width=12}
+
+## Table - Males, females, N, Controls, PSA, Psoriasis, other
+sex.stats <- age.tbl %>% 
+  dplyr::group_by(sex) %>% 
+  count() 
+knitr::kable(sex.stats)
+
+diagnosis.stats <- age.tbl %>% 
+  dplyr::group_by(diagnosis) %>% 
+  count()
+knitr::kable(diagnosis.stats)
+
+## Diagnosis numbers (with valid age and sex data)
+ggplot2::ggplot(age.tbl, aes(x = diagnosis)) + geom_bar() + theme_minimal() 
+
+print(paste0("Total N with defined age, sex and diagnosis: ", sum(diagnosis.stats$n, na.rm = T)))
+```
+
+#### Site based summaries
+```{r Summaries of different Recruitment sites, echo=FALSE, warning=FALSE}
+
+## Total recruitment across sites stratifies by gender, sex
+getSiteFromID <- function(participant_id){
+  if(grepl('SITE1',participant_id)){
+    return('SITE 1')
+  }else if(grepl('SITE2', participant_id)){
+    return('SITE 2')
+  }else if(grepl('subject', participant_id)){
+    return('SITE 1')
+  }else if(grepl('control', participant_id)){
+    return('SITE 1')
+  }else{
+    return('Unknown error')
+  }
+}
+
+age.tbl <- age.tbl %>% 
+  dplyr::rowwise() %>% 
+  dplyr::mutate(site = getSiteFromID(participantId)) %>% 
+  dplyr::mutate(above40 = (age>40)) %>% 
+  dplyr::ungroup()
+
+## total recruitment
+total.site.tbl <- age.tbl %>% 
+  dplyr::group_by(site) %>% 
+  dplyr::count()
+knitr::kable(total.site.tbl)
+
+## Stratification by sex
+sex.site.tbl  <- age.tbl %>% 
+  dplyr::group_by(site, sex) %>% 
+  dplyr::count()
+
+knitr::kable(sex.site.tbl)
+ggplot2::ggplot(age.tbl, aes(x = sex, fill = site)) + geom_bar() + theme_cleveland()
+
+## Stratification by Diagnosis
+diag.site.tbl <- age.tbl %>% 
+  dplyr::group_by(site, diagnosis) %>% 
+  dplyr::count()
+knitr::kable(diag.site.tbl)
+ggplot2::ggplot(age.tbl, aes(x = diagnosis, fill = site)) + geom_bar() + theme_cleveland()
+
+## Age above 40 or not, stratified by Site
+age40.site.tbl <- age.tbl %>% 
+  dplyr::group_by(above40, site) %>% 
+  dplyr::count()
+knitr::kable(age40.site.tbl)
+ggplot2::ggplot(age.tbl, aes(x = above40, fill = site)) + geom_bar() + theme_cleveland()
+```
