@@ -27,8 +27,8 @@ synapser::synLogin()
 ####################################
 #' Git Reference
 ####################################
-GIT_TOKEN_PATH <- "~/git_token.txt"
-GIT_REPO <- "arytontediarjo/psorcastValidationAnalysis"
+GIT_TOKEN_PATH <- config::get("git")$token_path
+GIT_REPO <- config::get("git")$repo
 SCRIPT_PATH <- "curate_tables/MDJointSwelling.R"
 setGithubToken(readLines(GIT_TOKEN_PATH))
 GIT_URL <- githubr::getPermlink(
