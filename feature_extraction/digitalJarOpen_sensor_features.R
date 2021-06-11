@@ -18,6 +18,8 @@ library(tidyr)
 library(plyr)
 library(dplyr)
 library(furrr)
+library(jsonlite)
+library(githubr)
 source("utils/feature_extraction_utils.R")
 source('utils/processing_log_utils.R')
 
@@ -38,7 +40,7 @@ SCRIPT_PATH <- file.path('feature_extraction', "digitalJarOpener_sensor_features
 GIT_TOKEN_PATH <- config::get("git")$token_path
 GIT_REPO <- config::get("git")$repo
 githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-GIT_URL <- getPermlink(
+GIT_URL <- githubr::getPermlink(
     repository = getRepo(
         repository = GIT_REPO, 
         ref="branch", 
