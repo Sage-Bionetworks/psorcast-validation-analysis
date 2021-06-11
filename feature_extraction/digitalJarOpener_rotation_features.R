@@ -24,7 +24,7 @@ synapser::synLogin()
 # source table ids
 DIG_JAR_OPEN_TBL_ID <- 'syn22281747'
 PARENT_SYN_ID <- 'syn22337134'
-OUTPUT_FILENAME <- 'DigitalJarOpen_features.tsv'
+OUTPUT_FILENAME <- 'DigitalJarOpen_rotation_features.tsv'
 
 # Github link
 SCRIPT_PATH <- file.path('feature_extraction', "digitalJarOpener_features.R")

@@ -120,3 +120,50 @@ save_to_synapse <- function(data,
     store_to_synapse <- synStore(file, activity = Activity(...))
     unlink(output_filename)
 }
+
+
+#' Function to search for gyroscope and accelerometer 
+#' sensors in a time-series 
+#' 
+#' @param ts timeseries dataframe of mpower_v2 format (x,y,z,sensortype,timestamp)
+#' 
+#' @return list of named dataframe for accel and gyro
+search_gyro_accel <- function(ts){
+    #' split to list
+    ts_list <- list()
+    ts_list$acceleration <- ts %>% 
+        dplyr::filter(
+            stringr::str_detect(tolower(sensorType), "^accel"))
+    ts_list$rotation <- ts %>% 
+        dplyr::filter(
+            stringr::str_detect(tolower(sensorType), "^rotation|^gyro"))
+    
+    #' parse rotation rate only
+    if(length(ts_list$rotation$sensorType %>% unique(.)) > 1){
+        ts_list$rotation <- ts_list$rotation %>% 
+            dplyr::filter(!stringr::str_detect(tolower(sensorType), "^gyro"))
+    }
+    
+    ts_list <- ts_list %>%
+        purrr::map(., ~(.x %>%
+                            dplyr::mutate(t = timestamp - .$timestamp[1]) %>%
+                            dplyr::select(t,x,y,z)))
+    return(ts_list)
+}
+
+# process parallelly using mhealthtools
+parallel_process_samples <- function(data, funs){
+    features <- furrr::future_pmap_dfr(list(
+        recordId = data$recordId, 
+        fileColumnName = data$fileColumnName,
+        filePath = data$filePath), function(recordId, fileColumnName, filePath){
+            filePath %>% 
+                list() %>%
+                purrr::pmap_dfr(funs) %>%
+                dplyr::mutate(
+                    recordId = recordId,
+                    fileColumnName = fileColumnName) %>%
+                dplyr::select(recordId, fileColumnName, everything())})
+    data %>% 
+        dplyr::inner_join(features, by = c("recordId", "fileColumnName"))
+}
