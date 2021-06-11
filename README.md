@@ -11,6 +11,7 @@ To run this repository, you will be required to have several credentials:
 
 #### 1. Clone Repository:
 ```
+git clone https://github.com/Sage-Bionetworks/psorcast-validation-analysis.git
 ```
 
 #### 2. Build Environment:
