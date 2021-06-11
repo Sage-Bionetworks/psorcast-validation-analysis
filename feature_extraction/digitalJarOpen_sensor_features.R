@@ -36,7 +36,7 @@ FILE_COLUMNS <- c("leftClockwise_motion.json",
                   "rightCounter_motion.json")
 
 # Github link
-SCRIPT_PATH <- file.path('feature_extraction', "digitalJarOpener_sensor_features.R")
+SCRIPT_PATH <- file.path('feature_extraction', "digitalJarOpen_sensor_features.R")
 GIT_TOKEN_PATH <- config::get("git")$token_path
 GIT_REPO <- config::get("git")$repo
 githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
@@ -99,10 +99,15 @@ get_mhealthtools_features <- function(file_path) {
 
 
 main <- function(){
+    #' - get table from synapse and file handle columns
+    #' - format data into tidy format (with recordId, and filehandlecolumns as index)
+    #' - for each sensor filepaths in index, parallel process using mhealthtools
+    #' - use mhealthtools to parse time-domain/frequency-domain features
+    #' - clean columns based on desired metadata and desired features
+    #' - save to synapse
     djo_mhealthtools_features <- 
         get_table(DIG_JAR_OPEN_TBL_ID, 
                   file_columns = FILE_COLUMNS) %>% 
-        dplyr::slice(1:3) %>%
         parallel_process_samples(funs = get_mhealthtools_features) %>%
         dplyr::select(recordId, 
                       createdOn, 
