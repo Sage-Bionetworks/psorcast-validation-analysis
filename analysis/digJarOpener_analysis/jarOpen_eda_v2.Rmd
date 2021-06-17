@@ -1,0 +1,228 @@
+```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+library(synapser)
+library(knit2synapse)
+library(tidyverse)
+library(dplyr)
+library(githubr)
+library(ggplot2)
+library(ggpval)
+library(ggExtra)
+library(ggpubr)
+library(data.table)
+library(patchwork)
+
+knitr::opts_chunk$set(cache = FALSE)
+synLogin()
+```
+
+```{r, echo = FALSE}
+MERGED_FEATURES <- "syn25832975"
+```
+
+```{r echo = FALSE}
+data <-  fread(synGet(MERGED_FEATURES)$path)
+```
+
+```{r echo = FALSE}
+get_total_rotation <- function(data){
+    data %>% 
+        dplyr::rowwise() %>% 
+        dplyr::mutate(total_rotation = sum(
+            djo_leftCounter, djo_rightCounter,
+            djo_leftClockwise, djo_rightClockwise)) 
+}
+
+count_joint <- function(data, group){
+    output_variable <- glue::glue("{group}_status_counts")
+    data %>% 
+        dplyr::mutate(!!sym(output_variable) := 
+                          case_when(
+                              is.na(!!sym(group)) ~ 0,
+                              !!sym(group)== "both" ~ 2,
+                              TRUE ~ 1))
+}
+
+get_upper_body_pain <- function(data){
+    data %>%
+        dplyr::rowwise() %>% 
+        dplyr::mutate(dig_upper_body_pain = 
+                          !(is.na(dig_jc_status_wrist) & 
+                                is.na(dig_jc_status_elbow) & 
+                                is.na(dig_jc_status_shoulder))) %>%
+        dplyr::mutate(gs_upper_body_pain = 
+                          !(is.na(gs_jc_status_wrist) & 
+                                is.na(gs_jc_status_elbow) & 
+                                is.na(gs_jc_status_shoulder))) %>%
+        dplyr::mutate(gs_upper_body_swell = 
+                          !(is.na(gs_swell_status_wrist) & 
+                                is.na(gs_swell_status_elbow) & 
+                                is.na(gs_swell_status_shoulder)))
+}
+
+plot_boxplot <- function(data, group, value){
+    data %>%
+        dplyr::select(total_rotation, 
+                      any_of(group),
+                      any_of(value)) %>%
+        ggplot(aes_string(x = group, y = value)) +
+        geom_boxplot() +
+        geom_jitter(position=position_jitter(0.1), alpha = 0.5) +
+        ggpubr::stat_compare_means() +
+        theme_minimal()
+}
+
+plot_subgroup <- function(data, group, value){
+    group_comp <- tidyr::crossing(
+        var1 = 0, var2 = 0:max(data[["total_reported"]])) %>%
+        dplyr::slice(2:n()) %>%
+        dplyr::mutate_all(as.character) %>%
+        purrr::transpose(.) %>% 
+        purrr::map(., function(x){unname(unlist(x))})
+    data %>%
+        dplyr::mutate(!!sym(group) := factor(
+            !!sym(group),
+            levels = c(0:max(.[[group]])))) %>%
+        ggplot(aes_string(x = group, y = value)) +
+        geom_boxplot() +
+        geom_jitter(position=position_jitter(0.1), alpha = 0.5) +
+        ggpubr::stat_compare_means(comparisons = group_comp) +
+        ggpubr::stat_compare_means(label.y = 2300, label.x = "1") +
+        theme_minimal()
+}
+```
+
+### Calculate required values for analysis
+```{r, echo=FALSE}
+features <- data %>% 
+    get_upper_body_pain() %>% 
+    get_total_rotation()
+```
+
+
+### Rotation Ratios
+```{r, echo = FALSE, fig.width = 8, fig.height = 10, warning = FALSE, message = FALSE}
+# digital measures
+dig_measures_pain <- purrr::map(c("djo_inward_ratio", "djo_outward_ratio"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "dig_upper_body_pain", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 2)
+
+# gold standard
+gs_measures_pain <- purrr::map(c("djo_inward_ratio", "djo_outward_ratio"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "gs_upper_body_pain", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 2)
+
+# gold standard
+gs_measures_swell <- purrr::map(c("djo_inward_ratio", "djo_outward_ratio"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "gs_upper_body_swell", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 2)
+
+ratio_plot <- patchwork::wrap_plots(dig_measures_pain, 
+                      gs_measures_pain, 
+                      gs_measures_swell,
+                      nrow = 3)
+
+ratio_plot
+```
+
+
+### Total Rotation
+```{r, echo = FALSE, fig.width = 8, fig.height = 4, warning = FALSE, message = FALSE}
+# digital measures
+dig_measures_pain <- purrr::map(c("total_rotation"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "dig_upper_body_pain", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 1)
+
+# gold standard
+gs_measures_pain <- purrr::map(c("total_rotation"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "gs_upper_body_pain", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 1)
+
+# gold standard
+gs_measures_swell <- purrr::map(c("total_rotation"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "gs_upper_body_swell", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 1)
+
+rotation_plot <- patchwork::wrap_plots(dig_measures_pain, 
+                      gs_measures_pain, 
+                      gs_measures_swell,
+                      ncol = 3)
+
+rotation_plot
+```
+
+### Dig Joint Pain  - Reported Upper Body Pain to Total Rotation
+```{r, echo = FALSE, fig.width = 8, fig.height = 5, warning = FALSE, message = FALSE}
+metrics <- c("dig_jc_status_wrist",
+             "dig_jc_status_elbow",
+             "dig_jc_status_shoulder")
+dig_pain <- purrr::map(metrics, ~features %>% 
+               count_joint(group = .x)) %>% 
+    purrr::reduce(full_join) %>% 
+    dplyr::rowwise() %>%
+    dplyr::mutate(total_reported = sum(across(ends_with("status_counts")))) %>% 
+    dplyr::select(total_reported, total_rotation)
+dig_pain %>%
+    plot_subgroup(group = "total_reported", 
+                  value = "total_rotation") + 
+    labs(x = "Total Reported Dig. Upper-Body Pain")
+```
+
+
+### Gold Standard Joint Pain - Reported Upper Body Pain to Total Rotation
+```{r, echo = FALSE, fig.width = 8, fig.height = 5, warning = FALSE, message = FALSE}
+metrics <- c("gs_jc_status_wrist",
+             "gs_jc_status_elbow",
+             "gs_jc_status_shoulder")
+gs_pain <- purrr::map(metrics, ~features %>% 
+               count_joint(group = .x)) %>% 
+    purrr::reduce(full_join) %>% 
+    dplyr::rowwise() %>%
+    dplyr::mutate(total_reported = sum(across(ends_with("status_counts")))) %>% 
+    dplyr::select(total_reported, total_rotation)
+gs_pain %>%
+    plot_subgroup(group = "total_reported", 
+                  value = "total_rotation") + 
+    labs(x = "Total Reported Gold-Standard Upper-Body Pain")
+```
+
+
+## Gold Standard Swelling - Reported Upper Body Pain to Total Rotation
+```{r, echo = FALSE, fig.width = 8, fig.height = 5, warning = FALSE, message = FALSE}
+metrics <- c("gs_swell_status_wrist",
+             "gs_swell_status_elbow",
+             "gs_swell_status_shoulder")
+gs_swell <- purrr::map(metrics, ~features %>% 
+               count_joint(group = .x)) %>% 
+    purrr::reduce(full_join) %>% 
+    dplyr::rowwise() %>%
+    dplyr::mutate(total_reported = sum(across(ends_with("status_counts")))) %>% 
+    dplyr::select(total_reported, total_rotation)
+gs_swell %>%
+    plot_subgroup(group = "total_reported", 
+                  value = "total_rotation") + 
+    labs(x = "Total Reported Gold-Standard Upper-Body Swelling")
+```
