@@ -1,9 +1,3 @@
----
-title: Jar Open EDA - Extended
-maintainer: aryton.tediarjo@sagebase.org, meghasyam@sagebase.org
-createdOn: `r format(Sys.time())`
----
-
 ## About
 This notebook will explore features used in Psorcast Digital Jar Opener
 as a function of joint pain and reported upper body pain from the cohort. 
