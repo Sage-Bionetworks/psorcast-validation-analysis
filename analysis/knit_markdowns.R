@@ -34,6 +34,12 @@ NOTEBOOK_REFS <- list(
         path = "analysis/digJarOpener_analysis/jarOpen_eda.Rmd",
         fileName = "Digital Jar Opener EDA"
     ),
+    jar_opener_v2 = list(
+        used = c('syn25832975'),
+        parent = "syn22337138",
+        path = "analysis/digJarOpener_analysis/jarOpen_eda_v2.Rmd",
+        fileName = "Digital Jar Opener EDA - Extended"
+    ),
     joint_counts = list(
             used = c('syn25832975'),
             parent = "syn22337138",

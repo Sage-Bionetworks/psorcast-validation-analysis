@@ -1,3 +1,9 @@
+---
+title: Psorcast 30s Walk Analysis
+maintainer: aryton.tediarjo@sagebase.org
+createdOn: `r format(Sys.time())`
+---
+
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
 library(synapser)
 library(knit2synapse)

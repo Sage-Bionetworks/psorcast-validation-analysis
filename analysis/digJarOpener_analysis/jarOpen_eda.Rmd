@@ -1,3 +1,9 @@
+---
+title: Digital Jar Open EDA
+maintainer: aryton.tediarjo@sagebase.org, meghasyam@sagebase.org
+createdOn: `r format(Sys.time())`
+---
+
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
 ###########################################################
 ## Required libraries and analysis functions

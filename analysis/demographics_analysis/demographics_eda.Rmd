@@ -1,3 +1,9 @@
+---
+title: Demographics Analysis
+maintainer: aryton.tediarjo@sagebase.org, meghasyam@sagebase.org
+createdOn: `r format(Sys.time())`
+---
+
 ```{r libs.and.functions, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
 ###########################################################
 ## Required libraries and analysis functions

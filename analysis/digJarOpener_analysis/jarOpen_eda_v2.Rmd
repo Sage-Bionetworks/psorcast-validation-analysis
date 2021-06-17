@@ -1,3 +1,16 @@
+---
+title: Jar Open EDA - Extended
+maintainer: aryton.tediarjo@sagebase.org, meghasyam@sagebase.org
+createdOn: `r format(Sys.time())`
+---
+
+## About
+This notebook will explore features used in Psorcast Digital Jar Opener
+as a function of joint pain and reported upper body pain from the cohort. 
+
+- Comparing features based on uppper body pain (binary yes/no)
+- Comparing features based on number of reported joint pain
+
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
 library(synapser)
 library(knit2synapse)
@@ -91,8 +104,9 @@ plot_subgroup <- function(data, group, value){
 }
 ```
 
-### Calculate required values for analysis
+
 ```{r, echo=FALSE}
+### Calculate required values for analysis
 features <- data %>% 
     get_upper_body_pain() %>% 
     get_total_rotation()
@@ -210,7 +224,7 @@ gs_pain %>%
 ```
 
 
-## Gold Standard Swelling - Reported Upper Body Pain to Total Rotation
+### Gold Standard Swelling - Reported Upper Body Pain to Total Rotation
 ```{r, echo = FALSE, fig.width = 8, fig.height = 5, warning = FALSE, message = FALSE}
 metrics <- c("gs_swell_status_wrist",
              "gs_swell_status_elbow",
