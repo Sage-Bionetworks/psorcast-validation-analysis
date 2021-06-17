@@ -92,6 +92,7 @@ main <- function(){
                     parentId = notebook$parent,
                     fileName = notebook$fileName,
                     used = notebook$used,
+                    name = "generate analysis notebooks",
                     executed = c(get_git_url(GIT_REPO, notebook$path), 
                                  get_git_url(GIT_REPO, SCRIPT_PATH)))
             }
