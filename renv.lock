@@ -1535,10 +1535,5 @@
       "Repository": "CRAN",
       "Hash": "c7eef2996ac270a18c2715c997a727c5"
     }
-  },
-  "Python": {
-    "Version": "3.8.2",
-    "Type": "virtualenv",
-    "Name": "~/Documents/SageBionetworks/venv"
   }
 }
