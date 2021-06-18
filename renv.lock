@@ -37,6 +37,13 @@
       "Repository": "CRAN",
       "Hash": "b7b812ae4484d4bbf0a0baac72e8fc01"
     },
+    "EMD": {
+      "Package": "EMD",
+      "Version": "1.5.8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "4d90c73624127eacca314049931542b5"
+    },
     "Exact": {
       "Package": "Exact",
       "Version": "2.1",
@@ -415,6 +422,13 @@
       "OS_type": "unix",
       "Hash": "a51780731e2ec5eee714097df69ea204"
     },
+    "dotCall64": {
+      "Package": "dotCall64",
+      "Version": "1.0-1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "d0ef6cd1546530da4d72179b52856e84"
+    },
     "dplyr": {
       "Package": "dplyr",
       "Version": "1.0.6",
@@ -477,6 +491,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "77bd60a6157420d4ffa93b27cf6a58b8"
+    },
+    "fields": {
+      "Package": "fields",
+      "Version": "12.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "bbe7b4ede308acb9e0c3947bf068f29b"
     },
     "forcats": {
       "Package": "forcats",
@@ -845,6 +866,13 @@
       "Repository": "CRAN",
       "Hash": "c0bfaec475ad944110cf686397c3246d"
     },
+    "locfit": {
+      "Package": "locfit",
+      "Version": "1.5-9.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "760b5b542e8435237d1b3c253bfe18e7"
+    },
     "lubridate": {
       "Package": "lubridate",
       "Version": "1.7.10",
@@ -865,6 +893,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "41287f1ac7d28a92f0a286ed507928d3"
+    },
+    "maps": {
+      "Package": "maps",
+      "Version": "3.3.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "392212982257ea03c37b63547dc871b4"
     },
     "maptools": {
       "Package": "maptools",
@@ -893,6 +928,19 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "eb7b6439bc6d812eed2cddba5edc6be3"
+    },
+    "mhealthtools": {
+      "Package": "mhealthtools",
+      "Version": "0.2.1",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "Sage-Bionetworks",
+      "RemoteRepo": "mhealthtools",
+      "RemoteRef": "master",
+      "RemoteSha": "4340b82fce2aef66ba445f81515749aa1cf599c3",
+      "Remotes": "cran/statcomp,",
+      "Hash": "524e4a24608c380769ea253d68107826"
     },
     "mime": {
       "Package": "mime",
@@ -1061,6 +1109,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "c396592ecfe9e75cee1013533efafe34"
+    },
+    "pracma": {
+      "Package": "pracma",
+      "Version": "2.3.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "cd80df226af8555a5cff3e7a76bd0756"
     },
     "praise": {
       "Package": "praise",
@@ -1286,6 +1341,13 @@
       "Repository": "CRAN",
       "Hash": "6f76f71042411426ec8df6c54f34e6dd"
     },
+    "seewave": {
+      "Package": "seewave",
+      "Version": "2.1.6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "497bd1e16bfd7c722d63b9cda391c104"
+    },
     "selectr": {
       "Package": "selectr",
       "Version": "0.4-2",
@@ -1307,6 +1369,13 @@
       "Repository": "CRAN",
       "Hash": "9ddfc91d4280eaa34c2103951538976f"
     },
+    "signal": {
+      "Package": "signal",
+      "Version": "0.7-7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "b8f2ef9022ac085add25ae093754e6b3"
+    },
     "slider": {
       "Package": "slider",
       "Version": "0.2.1",
@@ -1327,6 +1396,26 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "dfd843ee98246cf932823acf613b05dd"
+    },
+    "spam": {
+      "Package": "spam",
+      "Version": "2.6-0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "ded42bddce644a27e9a0c65045f29874"
+    },
+    "statcomp": {
+      "Package": "statcomp",
+      "Version": "0.1.0",
+      "Source": "GitHub",
+      "Repository": "CRAN",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "cran",
+      "RemoteRepo": "statcomp",
+      "RemoteRef": "master",
+      "RemoteSha": "6d34a467d90f37b6acd84996d35058b83f737a8f",
+      "Hash": "848d1f315951c2966d3002558b44c09c"
     },
     "stringi": {
       "Package": "stringi",
@@ -1437,6 +1526,13 @@
       "Repository": "CRAN",
       "Hash": "ee53286ff0fe213dbc5264c399767572"
     },
+    "tuneR": {
+      "Package": "tuneR",
+      "Version": "1.3.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5bbc623279d70ff9bfa18045bb1411c5"
+    },
     "utf8": {
       "Package": "utf8",
       "Version": "1.2.1",
@@ -1457,6 +1553,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "ecf749a1b39ea72bd9b51b76292261f1"
+    },
+    "viridis": {
+      "Package": "viridis",
+      "Version": "0.6.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "424d1285b7372d39806abb19467e4df4"
     },
     "viridisLite": {
       "Package": "viridisLite",
@@ -1534,6 +1637,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "c7eef2996ac270a18c2715c997a727c5"
+    },
+    "zoo": {
+      "Package": "zoo",
+      "Version": "1.8-9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "035d1c7c12593038c26fb1c2fd40c4d2"
     }
   }
 }
