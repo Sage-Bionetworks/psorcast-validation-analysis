@@ -167,3 +167,30 @@ parallel_process_samples <- function(data, funs){
     data %>% 
         dplyr::inner_join(features, by = c("recordId", "fileColumnName"))
 }
+
+
+#' function to flatten summary into tidy-format
+#' with recordId, joint type as index
+flatten_joint_summary <- function(data){
+    purrr::map2_dfr(data$recordId, data$filePath, 
+                    function(curr_record, filePath){
+                        tryCatch({
+                            identifier_data <- fromJSON(filePath) %>% 
+                                .$selectedIdentifier
+                            if(nrow(identifier_data) == 0){
+                                stop()
+                            }
+                            identifier_data %>% 
+                                tibble::as_tibble() %>%
+                                dplyr::mutate(recordId = curr_record)
+                        }, error = function(e){
+                            tibble(recordId = curr_record,
+                                   isSelected = FALSE,
+                                   error = geterrmessage())
+                        }
+                        )
+                    }) %>% 
+        dplyr::inner_join(data, by = c("recordId")) %>%
+        dplyr::select(participantId, everything())
+}
+
