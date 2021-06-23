@@ -27,7 +27,7 @@ PARENT_SYN_ID <- 'syn22337134'
 OUTPUT_FILENAME <- 'DigitalJarOpen_rotation_features.tsv'
 
 # Github link
-SCRIPT_PATH <- file.path('feature_extraction', "digitalJarOpener_features.R")
+SCRIPT_PATH <- file.path('feature_extraction', "digitalJarOpener_rotation_features.R")
 GIT_TOKEN_PATH <- config::get("git")$token_path
 GIT_REPO <- config::get("git")$repo
 githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
