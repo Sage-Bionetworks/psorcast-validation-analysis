@@ -138,7 +138,7 @@ regenerate_table <- function(data,
         c(new_cols, .)
     
     # add system sleep time interval to let table update
-    Sys.sleep(15)
+    Sys.sleep(60)
     
     # create new schema
     create_schema <- Schema(
