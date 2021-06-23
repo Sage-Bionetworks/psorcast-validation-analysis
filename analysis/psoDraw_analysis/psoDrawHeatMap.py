@@ -19,10 +19,10 @@ from synapseclient import File, Activity
 syn = sc.login()
 
 # Global Variables
-PSORIASIS_DRAW_IMAGES = "syn22367869"
+PSORIASIS_DRAW_IMAGES = "syn25837658"
 FIGURE_NAME = 'psoDrawHeatMap.png'
 PARENT_ID = 'syn23632500'
-GIT_URL = "https://github.com/arytontediarjo/psorcastValidationAnalysis/blob/master/Python/psoDrawHeatMap.py"
+GIT_URL = "https://github.com/Sage-Bionetworks/psorcast-validation-analysis/blob/main/analysis/psoDraw_analysis/psoDrawHeatMap.py"
 
 
 # Helper Function
