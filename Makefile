@@ -30,8 +30,8 @@ tables:
 features:
 	Rscript $(FEATURE_EXTRACTION_PATH)/get_visit_summary.R || exit 1
 	Rscript $(FEATURE_EXTRACTION_PATH)/copy_site_images.R || exit 1
-	Rscript $(FEATURE_EXTRACTION_PATH)/digitalJarOpener_rotation_features.R || exit 1
-	Rscript $(FEATURE_EXTRACTION_PATH)/digitalJarOpener_sensor_features.R || exit 1
+	Rscript $(FEATURE_EXTRACTION_PATH)/digitalJarOpen_rotation_features.R || exit 1
+	Rscript $(FEATURE_EXTRACTION_PATH)/digitalJarOpen_sensor_features.R || exit 1
 	Rscript $(FEATURE_EXTRACTION_PATH)/PPACMAN_features.R || exit 1
 	Rscript $(FEATURE_EXTRACTION_PATH)/jointSummaries_features.R || exit 1
 	Rscript $(FEATURE_EXTRACTION_PATH)/psoriasis_draw_bsa_features.R || exit 1
