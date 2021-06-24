@@ -15,11 +15,9 @@ To run this repository, you will be required to have several credentials:
 - A .synapseCache Folder for caching synapse files I/O
 
 ### How to run:
-
-a. Using Docker:
-
 We will be using docker for reproducing this analysis, we will require your Synapse/Github credentials (in file location) to be placed in .env so that as we build the container, it will contain all the required credentials.
 
+#### a. Using Docker:
 ```zsh
 docker pull arytontediarjo/psorcast-validation-analysis
 
@@ -30,17 +28,19 @@ docker run -v <SYNAPSE_CONFIG_PATH>:/root/.synapseConfig\
 
 docker exec <CONTAINER_ID> make pipeline
 ```
-b. Using Local RStudio (Local):
+#### b. Using Local RStudio (Local):
 
-i. Git Clone
+##### i. Git Clone
 ```zsh
 git clone git clone https://github.com/Sage-Bionetworks/psorcast-validation-analysis.git
 ```
 
-ii. Build Environment in R
+#### Python Environment Notes
+Some of the steps of the pipeline will use python and will be using R renv library for managing it (https://rstudio.github.io/renv/articles/python.html)
+
+##### ii. Build Environment in R
 ```R
 renv::init(bare = T)
 renv::restore()
-renv::use_python(`your python environment`) # parse in python location with installed packages from requirements.txt
+renv::use_python(<PYTHON_ENVIRONMENT>) # parse in python location with installed packages from requirements.txt
 ```
-
