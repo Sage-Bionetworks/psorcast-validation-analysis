@@ -10,20 +10,14 @@ RUN apt-get update -y\
     && apt-get install -y software-properties-common\
     && apt-get install -y libmagick++-dev
 
-## python dependencies
-RUN python3 -m venv /root/env\
-    && . /root/env/bin/activate \
-    && python3 -m pip install --upgrade pip\
-    && python3 -m pip install synapseclient\
-    && python3 -m pip install git+https://github.com/arytontediarjo/PDKitRotationFeatures.git\
-    && python3 -m pip install opencv-python\
-    && python3 -m pip install imageio
-
 ## run git cloning
 RUN git clone https://github.com/Sage-Bionetworks/psorcast-validation-analysis.git /root/psorcast-validation-analysis
 
-# change work dir
+## change work dir
 WORKDIR /root/psorcast-validation-analysis
+
+## python dependencies
+RUN bash init_py_env.sh
 
 ## get packages from lockfile
 ENV RENV_VERSION 0.13.2
@@ -32,4 +26,4 @@ RUN R -e "install.packages('synapser', repos=c('http://ran.synapse.org', 'http:/
 RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
 RUN R -e "renv::init(bare = TRUE)"
 RUN R -e "renv::restore()"
-RUN R -e "renv::use_python(name = '/root/env', type = 'virtualenv')"
+RUN R -e "renv::use_python(name = 'env', type = 'virtualenv')"
