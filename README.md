@@ -28,7 +28,7 @@ docker run -v <SYNAPSE_CONFIG_PATH>:/root/.synapseConfig\
 
 docker exec <CONTAINER_ID> make pipeline
 ```
-#### b. Using Local RStudio (Local):
+#### b. Contributing Using Local RStudio (Local):
 
 ##### i. Git Clone
 ```zsh
