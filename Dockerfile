@@ -11,7 +11,7 @@ RUN apt-get update -y\
     && apt-get install -y libmagick++-dev
 
 ## run git cloning
-RUN git clone https://github.com/arytontediarjo/psorcast-validation-analysis.git /root/psorcast-validation-analysis
+RUN git clone https://github.com/Sage-Bionetworks/psorcast-validation-analysis.git /root/psorcast-validation-analysis
 
 ## change work dir
 WORKDIR /root/psorcast-validation-analysis
