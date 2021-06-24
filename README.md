@@ -3,10 +3,11 @@
 
 Welcome to Psorcast Validation Analysis Github Repository, this repository is purposed to be the analytical pipeline for Psorcast Validation Study.
 
-## File Directories:
+## Script Directories:
 - <b>curate_tables</b>: Folder for storing all scripts related to curating tables from Bridge to Validation Analysis Project
 - <b>feature_extraction</b>: Folder for storing all scripts related to extracting key features from previously extracted Synapse Tables
 - <b>analysis</b>: Folder for storing analysis codes and notebooks
+- <b>utils</b>: Folder for script helper across data pipeline
 
 ## How to run
 To run this repository, you will be required to have several credentials:
@@ -14,10 +15,10 @@ To run this repository, you will be required to have several credentials:
 - A .synapseConfig File for getting your credentials to synapse
 - A .synapseCache Folder for caching synapse files I/O
 
-### How to run:
+### HOW-TO:
 We will be using docker for reproducing this analysis, we will require your Synapse/Github credentials (in file location) to be placed in .env so that as we build the container, it will contain all the required credentials.
 
-#### a. Using Docker:
+#### a. Rerunning Pipeline using Docker:
 ```zsh
 docker pull arytontediarjo/psorcast-validation-analysis
 
@@ -28,7 +29,7 @@ docker run -v <SYNAPSE_CONFIG_PATH>:/root/.synapseConfig\
 
 docker exec <CONTAINER_ID> make pipeline
 ```
-#### b. Using Local RStudio (Local):
+#### b. RStudio Environment 
 
 ##### i. Git Clone
 ```zsh
@@ -36,13 +37,14 @@ git clone git clone https://github.com/Sage-Bionetworks/psorcast-validation-anal
 ```
 
 #### ii. Create Python Virtual Environment
-Some of the steps of the pipeline will use python and will be using R renv library for managing it (https://rstudio.github.io/renv/articles/python.html)
 ```zsh
 bash init_py_env.sh
 ```
 
-##### iii. Restore Libraries 
+##### iii. Restore R Libraries using R's `renv` package
+Some of the steps of the pipeline will use python and will be using R renv library for managing it (https://rstudio.github.io/renv/articles/python.html)
 ```R
+remotes::install_github('rstudio/renv@0.13.2')
 renv::init(bare = T)
 renv::restore()
 renv::use_python(name = "env", type = "virtualenv") # parse in python location with installed packages from requirements.txt
