@@ -34,7 +34,6 @@ partd==1.2.0
 patsy==0.5.1
 pdkit==1.2
 Pillow==8.2.0
-pkg-resources==0.0.0
 protobuf==3.11.2
 psutil==5.8.0
 pycparser==2.20
