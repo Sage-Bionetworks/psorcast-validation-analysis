@@ -35,13 +35,13 @@ docker exec <CONTAINER_ID> make pipeline
 git clone git clone https://github.com/Sage-Bionetworks/psorcast-validation-analysis.git
 ```
 
-#### ii
+#### ii. Create Python Virtual Environment
 Some of the steps of the pipeline will use python and will be using R renv library for managing it (https://rstudio.github.io/renv/articles/python.html)
 ```zsh
 bash init_py_env.sh
 ```
 
-##### ii. Build Environment in R
+##### iii. Restore Libraries 
 ```R
 renv::init(bare = T)
 renv::restore()
