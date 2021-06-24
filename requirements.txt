@@ -1,3 +1,4 @@
+git+https://github.com/arytontediarjo/PDKitRotationFeatures.git@master
 certifi==2021.5.30
 cffi==1.14.5
 chardet==4.0.0
@@ -33,7 +34,6 @@ pandas-validator==0.5.0
 partd==1.2.0
 patsy==0.5.1
 pdkit==1.2
-PDKitRotationFeatures==0.0.2
 Pillow==8.2.0
 pkg-resources==0.0.0
 protobuf==3.11.2
