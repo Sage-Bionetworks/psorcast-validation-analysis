@@ -1,7 +1,5 @@
 # Sage Bionetworks - Psorcast Validation Analysis
-<img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/Sage-Bionetworks/psorcast-validation-analysis"> 
-<img alt="GitHub issues" src="https://img.shields.io/github/issues/Sage-Bionetworks/psorcast-validation-analysis">
-<img alt="Docker Cloud Build Status" src="https://img.shields.io/docker/cloud/build/arytontediarjo/psorcast-validation-analysis">
+<img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/Sage-Bionetworks/psorcast-validation-analysis">  <img alt="GitHub issues" src="https://img.shields.io/github/issues/Sage-Bionetworks/psorcast-validation-analysis">  <img alt="Docker Cloud Build Status" src="https://img.shields.io/docker/cloud/build/arytontediarjo/psorcast-validation-analysis">
 
 Welcome to Psorcast Validation Analysis Github Repository, this repository is purposed to be the analytical pipeline for Psorcast Validation Study.
 
