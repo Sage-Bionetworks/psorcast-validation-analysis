@@ -3,7 +3,7 @@
 #' @param syn synapse object
 #' @param synapse_tbl tbl id in synapse
 #' @param file_columns file_columns to download
-get_table <- function(syn, synapse_tbl, 
+get_table_py_client <- function(syn, synapse_tbl, 
                       file_columns = NULL){
     # get table entity
     entity <- syn$tableQuery(glue::glue("SELECT * FROM {synapse_tbl}"))
@@ -45,26 +45,16 @@ get_table <- function(syn, synapse_tbl,
     return(result)
 }
 
-save_to_synapse <- function(syn,
+save_to_synapse_py_client <- function(syn,
                             synapseclient,
                             data, 
                             output_filename, 
                             parent,
-                            provenance = FALSE, ...){
+                            ...){
     data %>% 
         readr::write_tsv(output_filename)
     file <- synapseclient$File(output_filename, parent =  parent)
-    
-    if(provenance){
-        provenance_param = list(...)
-        activity = synapseclient$Activity(
-            name = provenance_param$name,
-            used = provenance_param$used,
-            executed = provenance_param$executed)
-        
-    }else{
-        activity = synapseclient$Activity()
-    }
+    activity = synapseclient$Activity(...)
     store_to_synapse <- syn$store(file, activity = activity)
     unlink(output_filename)
 }

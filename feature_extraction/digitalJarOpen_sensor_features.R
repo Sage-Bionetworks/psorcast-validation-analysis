@@ -28,12 +28,18 @@ synapser::synLogin()
 
 # source table ids
 DIG_JAR_OPEN_TBL_ID <- 'syn22281747'
-PARENT_SYN_ID <- 'syn22337134'
-OUTPUT_FILENAME <- 'DigitalJarOpen_mhealthtools_features.tsv'
 FILE_COLUMNS <- c("leftClockwise_motion.json", 
                   "leftCounter_motion.json",
                   "rightClockwise_motion.json", 
                   "rightCounter_motion.json")
+OUTPUT_REF <- list(
+    feature = list(
+        output = 'djo_mhealthtools_features.tsv',
+        parent = "syn22337134"),
+    log = list(
+        output = 'error_log_djo_mhealthtools_features.tsv',
+        parent = "syn25832341")
+)
 
 # Github link
 SCRIPT_PATH <- file.path('feature_extraction', "digitalJarOpen_sensor_features.R")
@@ -119,8 +125,8 @@ main <- function(){
                       ends_with(".fr")) %>%
         save_to_synapse(
             data = .,
-            output_filename = OUTPUT_FILENAME,
-            parent = PARENT_SYN_ID,
+            output_filename = OUTPUT_REF$feature$output,
+            parent = OUTPUT_REF$feature$parent,
             name = "get dig jar opener mhealthtools feat",
             executed = GIT_URL,
             used = DIG_JAR_OPEN_TBL_ID)

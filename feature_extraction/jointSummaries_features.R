@@ -26,7 +26,8 @@ synLogin()
 PARENT_SYN_ID <- "syn22336715"
 ERROR_LOG_SYN_ID <- "syn25832341"
 VISIT_REF <- "syn25825626"
-PPACMAN_TBL <- "syn25006883"
+PPACMAN_TBL_ID <- "syn22337133"
+VISIT_REF_ID <- "syn25825626"
 FILE_COLUMNS <- "summary.json"
 JOINT_LOCATION <- c("knee", "hip", "ankle", 
                     "wrist", "elbow", "shoulder")
@@ -36,12 +37,12 @@ JOINT_TBL_REF <- list(
         prefix = "dig_jc",
         syn_id = "syn22281786",
         output_filename = "dig_jc_features.tsv"),
-    md_jc = list(
+    gs_jc = list(
         prefix = "gs_jc",
         syn_id = "syn22281781",
         output_filename = "gs_jc_features.tsv"
     ),
-    md_swell = list(
+    gs_swell = list(
         prefix = "gs_swell",
         syn_id = "syn22281780",
         output_filename = "gs_swell_features.tsv"
@@ -136,6 +137,10 @@ main <- function(){
     #' a. reported joint counts (group-by of record and identifier)
     #' b. parse into string for all major joints
     #' c. parse symmetrical pain status
+    
+    #' get visit reference and curated ppacman table
+    visit_ref <- synGet(VISIT_REF_ID)$path %>% fread()
+    ppacman <- synGet(PPACMAN_TBL_ID)$path %>% fread()
     joint_summaries <- purrr::map(names(JOINT_TBL_REF), function(activity){
         #' retrieve data
         prefix <- JOINT_TBL_REF[[activity]]$prefix
@@ -164,19 +169,32 @@ main <- function(){
             dplyr::mutate(error = ifelse(is.na(!!sym(counts_columns)), 
                                          "error: empty list in summary.json",
                                          NA_character_)) %>%
-            dplyr::filter(is.na(error))
+            dplyr::filter(is.na(error)) %>% 
+            join_with_ppacman(
+                visit_ref_tbl = visit_ref,
+                ppacman_tbl = ppacman) %>%
+            dplyr::select(recordId, 
+                          participantId, 
+                          createdOn, 
+                          visit_num,
+                          starts_with(activity)) %>% 
+            dplyr::group_by(participantId, visit_num) %>%
+            dplyr::summarise_all(last) %>%
+            dplyr::mutate(createdOn = as.character(createdOn))
         
         #' get error logging for removed records
-        error_log <- joint_data %>% 
-            dplyr::select(recordId, 
-                          createdOn, 
-                          participantId, 
-                          error) %>%
-            dplyr::filter(!is.na(error))
+        error_log <- joint_report %>% 
+            dplyr::filter(!recordId %in% unique(joint_data$recordId)) %>% 
+            dplyr::group_by(recordId) %>% 
+            dplyr::summarise_all(last) %>% 
+            dplyr::select(recordId, error) %>% 
+            dplyr::mutate(error = ifelse(
+                is.na(error), 
+                "removed from ppacman joining", 
+                error))
         
         #' save joint features to synapse
-        save_to_synapse(data = joint_data %>% 
-                            dplyr::select(-error),
+        save_to_synapse(data = joint_data,
                         output_filename = output_filename, 
                         parent = PARENT_SYN_ID,
                         name = "get joint summaries",

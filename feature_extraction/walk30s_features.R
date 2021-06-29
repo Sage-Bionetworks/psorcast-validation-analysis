@@ -18,9 +18,11 @@ library(plyr)
 library(jsonlite)
 library(doMC)
 library(githubr)
+library(data.table)
 library(jsonlite)
 registerDoMC(detectCores())
 source("utils/reticulate_python_utils.R")
+source("utils/feature_extraction_utils.R")
 source('utils/processing_log_utils.R')
 
 ####################################
@@ -28,6 +30,8 @@ source('utils/processing_log_utils.R')
 ####################################
 GIT_PATH <- "~/git_token.txt"
 WALK_TBL <- "syn22281384"
+PPACMAN_TBL_ID <- "syn22337133"
+VISIT_REF_ID <- "syn25825626"
 UID <- c("recordId")
 KEEP_METADATA <- c("participantId",
                    "createdOn", 
@@ -180,8 +184,12 @@ segment_gait_data <- function(data){
 
 
 main <- function(){
+    #' get visit reference and curated ppacman table
+    visit_ref <- syn$get(VISIT_REF_ID)$path %>% fread()
+    ppacman <- syn$get(PPACMAN_TBL_ID)$path %>% fread()
+    
     #' get walk data and featurize
-    walk_features <- get_table(
+    walk_features <- get_table_py_client(
         syn, synapse_tbl = WALK_TBL, 
         file_columns = FILE_HANDLE_COLS) %>% 
         process_walk_samples(parallel = T) %>%
@@ -192,18 +200,30 @@ main <- function(){
         segment_gait_data()
     
     #' aggregate_features
-    aggregate_features <- summarize_features(
+    all_aggregate_features <- summarize_features(
         segment_walk_data$walk_data,
         segment_walk_data$rotation_data,
         GROUP_COLS)
     
+    #' subset joinnable data with ppacman and duplicate entries
+    aggregate_features <- all_aggregate_features %>%
+        join_with_ppacman(visit_ref, ppacman) %>% 
+        dplyr::mutate(createdOn = as.character(createdOn)) %>%
+        dplyr::select(recordId, 
+                      participantId, 
+                      createdOn, 
+                      visit_num, 
+                      ends_with("iqr"),
+                      ends_with("md")) %>% 
+        dplyr::group_by(participantId, visit_num) %>%
+        dplyr::summarise_all(last)
+    
     #' removed_file 
-    log_data <- walk_features %>% 
-        dplyr::filter(!recordId %in% aggregate_features$recordId) %>%
-        dplyr::select(recordId, createdOn, participantId, error)
+    log_data <- log_removed_data(all_aggregate_features %>%
+                                     dplyr::mutate(error = NA), aggregate_features)
     
     #' store raw features to synapse
-    save_to_synapse(syn = syn, 
+    save_to_synapse_py_client(syn = syn, 
                     synapseclient = synapseclient, 
                     data = walk_features, 
                     output_filename = OUTPUT_FEATURE_FILE$raw_features, 
@@ -214,7 +234,7 @@ main <- function(){
     
     
     #' store aggregate features to synapse
-    save_to_synapse(syn = syn, 
+    save_to_synapse_py_client(syn = syn, 
                     synapseclient = synapseclient, 
                     data = aggregate_features, 
                     output_filename = OUTPUT_FEATURE_FILE$agg_features, 
@@ -224,7 +244,7 @@ main <- function(){
                     executed = GIT_URL)
     
     #' store log data from which recordIds are removed
-    save_to_synapse(syn = syn, 
+    save_to_synapse_py_client(syn = syn, 
                     synapseclient = synapseclient, 
                     data =log_data, 
                     output_filename = OUTPUT_FEATURE_FILE$log_data, 

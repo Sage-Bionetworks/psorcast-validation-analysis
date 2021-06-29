@@ -167,3 +167,16 @@ parallel_process_samples <- function(data, funs){
     data %>% 
         dplyr::inner_join(features, by = c("recordId", "fileColumnName"))
 }
+
+log_removed_data <- function(all_data, subset_data){
+    all_data %>% 
+        dplyr::filter(!recordId %in% 
+                          unique(subset_data$recordId)) %>% 
+        dplyr::group_by(recordId) %>% 
+        dplyr::summarise_all(last) %>% 
+        dplyr::select(recordId, error) %>% 
+        dplyr::mutate(error = ifelse(
+            is.na(error), 
+            "removed from ppacman joining", 
+            error))
+}

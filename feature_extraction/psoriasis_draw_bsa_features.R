@@ -34,9 +34,16 @@ synapser::synLogin()
 ##############################
 ## source table ids
 PSORIASIS_DRAW_TBL_ID <- "syn22281746"
-PARENT_SYN_ID <- "syn22336716"
-OUTPUT_FILENAME <- "psoriasisDraw_features.tsv"
-
+PPACMAN_TBL_ID <- "syn22337133"
+VISIT_REF_ID <- "syn25825626"
+OUTPUT_REF <- list(
+    feature = list(
+        output = "psoriasisDraw_features.tsv",
+        parent = "syn22336716"),
+    log = list(
+        output = "error_log_psoriasisDraw_features.tsv",
+        parent = "syn25832341")
+    )
 ## list of digital body surface multipliers (percentage %)
 ABOVE_WAIST_FRONT_WEIGHT<- 25.6873160187267/100
 ABOVE_WAIST_BACK_WEIGHT <- 22.7544780091461/100
@@ -81,23 +88,46 @@ calculate_coverage <- function(data){
 }
 
 main <- function(){
+    #' get visit reference and curated ppacman table
+    visit_ref <- synGet(VISIT_REF_ID)$path %>% fread()
+    ppacman <- synGet(PPACMAN_TBL_ID)$path %>% fread()
+    
     #' retrieve table and recalculate coverage based on version
-    pso_draw_table <- get_table(PSORIASIS_DRAW_TBL_ID) %>%
+    all_pso_draw_table <- get_table(PSORIASIS_DRAW_TBL_ID) %>%
         calculate_coverage() %>%
         dplyr::mutate(createdOn = as.character(createdOn)) %>%
         dplyr::arrange(desc(createdOn)) %>%
         dplyr::select(-coverage) %>%
+        dplyr::mutate(error = NA)
+    
+    #' get data joinnable with ppacman
+    pso_draw_table <- all_pso_draw_table %>%
+        join_with_ppacman(visit_ref, ppacman) %>% 
         dplyr::select(recordId, 
-                      createdOn, 
                       participantId, 
+                      createdOn, 
+                      visit_num, 
                       ends_with("coverage"),
-                      dig_bsa)
+                      dig_bsa) %>% 
+        dplyr::group_by(participantId, visit_num) %>%
+        dplyr::summarise_all(last)
+    
+    #' get error logging for removed records
+    error_log <- log_removed_data(all_pso_draw_table, pso_draw_table)
     
     #' save pso draw dable
     save_to_synapse(data = pso_draw_table,
-                    output_filename = OUTPUT_FILENAME,
-                    parent = PARENT_SYN_ID,
+                    output_filename = OUTPUT_REF$feature$output,
+                    parent = OUTPUT_REF$feature$parent,
                     name = "get psodraw features",
+                    executed = GIT_URL,
+                    used = PSORIASIS_DRAW_TBL_ID)
+    
+    #' save pso draw error rlog
+    save_to_synapse(data = error_log,
+                    output_filename = OUTPUT_REF$log$output,
+                    parent = OUTPUT_REF$log$parent,
+                    name = "get psodraw features - logs",
                     executed = GIT_URL,
                     used = PSORIASIS_DRAW_TBL_ID)
 }
