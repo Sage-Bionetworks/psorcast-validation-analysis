@@ -29,6 +29,7 @@ docker run -v <SYNAPSE_CONFIG_PATH>:/root/.synapseConfig\
 
 docker exec <CONTAINER_ID> make pipeline
 ```
+
 #### b. RStudio Environment 
 
 ##### i. Git Clone
