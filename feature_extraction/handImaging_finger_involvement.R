@@ -21,7 +21,7 @@ VISIT_SUMMARY <- "syn25832372"
 HAND_IMAGING_FOLDER <- "syn25837496"
 FINGER_LIST <- c("L1", "L2", "L3", "L4", "L5",
                  "R1", "R2", "R3", "R4", "R5")
-OUTPUT_FILENAME <- "hand_imaging_finger_status.tsv"
+OUTPUT_FILENAME <- "hand_imaging_finger_involvement.tsv"
 
 ############################
 # Git Reference
