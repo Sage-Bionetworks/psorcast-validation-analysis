@@ -18,6 +18,7 @@ ERROR_LOG_SYN_ID <- "syn25832341"
 VISIT_REF_TBL_ID <- "syn25825626"
 PPACMAN_TBL_ID <- "syn22337133"
 VISIT_SUMMARY <- "syn25832372"
+HAND_IMAGING_FOLDER <- "syn25837496"
 FINGER_LIST <- c("L1", "L2", "L3", "L4", "L5",
                  "R1", "R2", "R3", "R4", "R5")
 OUTPUT_FILENAME <- "hand_imaging_finger_status.tsv"
@@ -37,6 +38,23 @@ GIT_URL <- getPermlink(
         ref="branch", 
         refName='main'), 
     repositoryPath = SCRIPT_PATH)
+
+#' Function to get photo mapping
+get_photo_mapping <- function(){
+    synGetChildren(HAND_IMAGING_FOLDER)$asList() %>% 
+        purrr::map_dfr(function(obj){
+            synId <- obj$id
+            name <- obj$name
+            synGetAnnotations(synId) %>% 
+                enframe() %>% 
+                dplyr::mutate(value = unlist(value)) %>%
+                tidyr::pivot_wider(name) %>% 
+                dplyr::mutate(synId = synId,
+                              name = name)}) %>%
+        dplyr::mutate(createdOn = as.character(createdOn)) %>% 
+        dplyr::filter(str_detect(name, "handImaging")) %>%
+        dplyr::select(recordId, synId, name)
+}
 
 #' function to collapse finger list
 #' @param data dataframe containing list
@@ -107,6 +125,9 @@ main <- function(){
         # parse each finger location to columns
         widen_finger_string_col("finger_nail") %>%
         dplyr::mutate(createdOn = as.character(createdOn)) %>%
+        
+        #' join with mapping
+        dplyr::inner_join(get_photo_mapping(), by = c("recordId")) %>%
         tibble::as_tibble() %>%
         
         # save to synapse

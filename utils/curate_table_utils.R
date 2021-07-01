@@ -109,7 +109,6 @@ regenerate_table <- function(data,
                              keep_cols = NULL,
                              new_cols = NULL,
                              copy_files = FALSE,
-                             provenance = FALSE,
                              ...){
     # check if table if exist (if yes, delete rows)
     cat("check table existence")
@@ -160,10 +159,9 @@ regenerate_table <- function(data,
     }
     
     # set provenance 
-    if(provenance){
-        activity <- Activity(...)
-        synSetProvenance(schema$properties$id, activity)
-    }
+    activity <- Activity(...)
+    synSetProvenance(schema$properties$id, activity)
+    
     # match data with schema
     data <- data %>%
         dplyr::select(all_of(col_used_in_schema))
