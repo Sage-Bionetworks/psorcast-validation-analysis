@@ -79,7 +79,7 @@ calculate_reported_counts <- function(data){
 #' @data dataframe of flattened summary.json
 create_joint_string_list <- function(data){
     data %>%
-        dplyr::filter(is.na(error)) %>%
+        dplyr::filter(is.na(error) & isSelected == TRUE) %>%
         dplyr::group_by(recordId) %>%
         dplyr::summarise(joint_list = paste0(identifier, collapse = ","))
 }
