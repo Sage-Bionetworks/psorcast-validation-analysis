@@ -50,8 +50,13 @@ flatten_joint_summary <- function(data){
                     data$filePath, 
                     function(curr_record, filePath){
                         tryCatch({
-                            identifier_data <- jsonlite::fromJSON(filePath) %>% 
-                                .$selectedIdentifier
+                            data <- jsonlite::fromJSON(filePath)
+                            if("simpleJoints" %in% names(data)){
+                                identifier_data <- data$simpleJoints
+                            }else{
+                                identifier_data <- data$selectedIdentifiers
+                            }
+                            
                             if(nrow(identifier_data) == 0){
                                 stop()
                             }
