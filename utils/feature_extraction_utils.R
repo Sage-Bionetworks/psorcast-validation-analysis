@@ -50,8 +50,13 @@ flatten_joint_summary <- function(data){
                     data$filePath, 
                     function(curr_record, filePath){
                         tryCatch({
-                            identifier_data <- jsonlite::fromJSON(filePath) %>% 
-                                .$selectedIdentifier
+                            data <- jsonlite::fromJSON(filePath)
+                            if("simpleJoints" %in% names(data)){
+                                identifier_data <- data$simpleJoints
+                            }else{
+                                identifier_data <- data$selectedIdentifiers
+                            }
+                            
                             if(nrow(identifier_data) == 0){
                                 stop()
                             }
@@ -166,4 +171,17 @@ parallel_process_samples <- function(data, funs){
                 dplyr::select(recordId, fileColumnName, everything())})
     data %>% 
         dplyr::inner_join(features, by = c("recordId", "fileColumnName"))
+}
+
+log_removed_data <- function(all_data, subset_data){
+    all_data %>% 
+        dplyr::filter(!recordId %in% 
+                          unique(subset_data$recordId)) %>% 
+        dplyr::group_by(recordId) %>% 
+        dplyr::summarise_all(last) %>% 
+        dplyr::select(recordId, error) %>% 
+        dplyr::mutate(error = ifelse(
+            is.na(error), 
+            "removed from ppacman joining", 
+            error))
 }

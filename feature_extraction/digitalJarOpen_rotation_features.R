@@ -1,8 +1,8 @@
 ########################################################################
 # Psoriasis Validation
 # Purpose: To extract features for the Digital Jar Open test
-# Author: Meghasyam Tummalacherla
-# email: meghasyam@sagebase.org
+# Maintainer : Meghasyam Tummalacherla, Aryton Tediarjo
+# email: meghasyam@sagebase.org, aryton.tediarjo@sagebase.org
 ########################################################################
 rm(list=ls())
 gc()
@@ -23,8 +23,16 @@ synapser::synLogin()
 
 # source table ids
 DIG_JAR_OPEN_TBL_ID <- 'syn22281747'
-PARENT_SYN_ID <- 'syn22337134'
-OUTPUT_FILENAME <- 'DigitalJarOpen_rotation_features.tsv'
+PPACMAN_TBL_ID <- "syn22337133"
+VISIT_REF_ID <- "syn25825626"
+OUTPUT_REF <- list(
+    feature = list(
+        output = 'djo_rotation_features.tsv',
+        parent = "syn22337134"),
+    log = list(
+        output = 'error_log_djo_rotation_features.tsv',
+        parent = "syn25832341")
+)
 
 # Github link
 SCRIPT_PATH <- file.path('feature_extraction', "digitalJarOpen_rotation_features.R")
@@ -39,6 +47,11 @@ GIT_URL <- getPermlink(
     repositoryPath = SCRIPT_PATH)
 
 main <- function(){
+    #' get visit reference and curated ppacman table
+    visit_ref <- synGet(VISIT_REF_ID)$path %>% fread()
+    ppacman <- synGet(PPACMAN_TBL_ID)$path %>% fread()
+    
+    #' get djo features from table
     digitalJarOpen.syn <- synapser::synTableQuery(paste0(
         'select * from ', DIG_JAR_OPEN_TBL_ID))
     digitalJarOpen.tbl <- digitalJarOpen.syn$asDataFrame() %>% 
@@ -52,24 +65,43 @@ main <- function(){
                               leftCounterRotation)/min(rightClockwiseRotation, 
                                                        leftCounterRotation)) %>% 
         dplyr::ungroup()
-    digitalJarOpen.ftrs <- digitalJarOpen.tbl %>% 
+    
+    #' get all djo features
+    all.digitalJarOpen.ftrs <- digitalJarOpen.tbl %>% 
         dplyr::select(-ROW_ID, -ROW_VERSION) %>% 
+        dplyr::mutate(createdOn = as.character(createdOn))
+    
+    #' get data joinnable with ppacman
+    digitalJarOpen.ftrs <- all.digitalJarOpen.ftrs %>%
+        join_with_ppacman(visit_ref, ppacman) %>% 
         dplyr::mutate(createdOn = as.character(createdOn)) %>%
-        dplyr::select(recordId,
-                      participantId,
-                      createdOn,
-                      djo_inward_ratio,
-                      djo_outward_ratio,
+        dplyr::select(recordId, 
+                      participantId, 
+                      createdOn, 
+                      visit_num, 
+                      starts_with("djo"),
                       djo_leftClockwise = leftClockwiseRotation,
                       djo_leftCounter = leftCounterRotation,
                       djo_rightClockwise = rightClockwiseRotation,
                       djo_rightCounter = rightCounterRotation) %>% 
-        unique()
+        dplyr::group_by(participantId, visit_num) %>%
+        dplyr::summarise_all(last)
+    
+    #' get error logging for removed records
+    error_log <- log_removed_data(all.digitalJarOpen.ftrs %>%
+                                      dplyr::mutate(error = NA), 
+                                  digitalJarOpen.ftrs)
     
     save_to_synapse(data = digitalJarOpen.ftrs,
-                    output_filename = OUTPUT_FILENAME,
-                    parent = PARENT_SYN_ID,
+                    output_filename = OUTPUT_REF$feature$output,
+                    parent = OUTPUT_REF$feature$parent,
                     name = "get dig jar opener feat",
+                    executed = GIT_URL,
+                    used = DIG_JAR_OPEN_TBL_ID)
+    save_to_synapse(data = error_log,
+                    output_filename = OUTPUT_REF$log$output,
+                    parent = OUTPUT_REF$log$parent,
+                    name = "get dig jar opener feat - log",
                     executed = GIT_URL,
                     used = DIG_JAR_OPEN_TBL_ID)
     

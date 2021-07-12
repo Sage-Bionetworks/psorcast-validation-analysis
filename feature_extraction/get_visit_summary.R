@@ -94,11 +94,13 @@ get_psorcast_tables <- function(tbl_id){
             source = tbl_name,
             id = tbl_id) %>% 
         dplyr::select(
-            any_of(c("participantId", 
-                     "createdOn", 
-                     "visit_num", 
-                     "source",
-                     "id")))
+            any_of(c(
+                "recordId",
+                "participantId", 
+                "createdOn", 
+                "visit_num", 
+                "source",
+                "id")))
 }
 
 get_single_visit_timestamp_ref <- function(data){
