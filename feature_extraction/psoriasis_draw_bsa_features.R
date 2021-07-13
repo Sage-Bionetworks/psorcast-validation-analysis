@@ -24,6 +24,7 @@ library(tidyverse)
 library(purrr)
 library(githubr)
 library(readr)
+library(data.table)
 source("utils/feature_extraction_utils.R")
 source('utils/processing_log_utils.R')
 
