@@ -23,15 +23,15 @@ MERGED_FEATURES <- "syn25832975"
 ```
 
 ```{r echo = FALSE}
-get_feature_boxplot <- function(data, feature, title, x, y){
+get_feature_boxplot <- function(data, feature, metric, title, x, y){
     ggplot(data=data, 
        aes_string(
-           x = "has_lower_pain", 
+           x = metric, 
            y = feature,
-           fill = "has_lower_pain")) +
+           fill = metric)) +
     geom_boxplot(
         alpha =  0.5,
-        width = 0.5/length(unique(data$has_lower_pain))) +
+        width = 0.5/length(unique(data[[metric]]))) +
     geom_dotplot(binaxis='y', 
                  stackdir='center', 
                  dotsize=0.7, 
@@ -52,10 +52,24 @@ get_feature_boxplot <- function(data, feature, title, x, y){
 
 ```{r, echo = FALSE}
 data <-  fread(synGet(MERGED_FEATURES)$path)
+
+ppacman <-  synTableQuery("SELECT *  FROM syn25006883")$asDataFrame() %>% 
+    dplyr::select(participantId, 
+                  visit_num = `Visit Number`, 
+                  ent_loc =`Enthesitis Label`) %>%
+    dplyr::mutate(has_lower_enthesitis = ifelse(str_detect(ent_loc, "knee|achilles"), 
+                                                "has lower enthesitis", 
+                                                "no lower enthesitis"),
+                  has_upper_enthesitis = ifelse(str_detect(ent_loc, "arm"), 
+                                                "has upper enthesitis", 
+                                                "no upper enthesitis"))
+
+data <- data %>%
+    dplyr::left_join(ppacman, by = c("participantId", "visit_num"))
 ```
 
+
 ```{r, echo = FALSE}
-data <-  fread(synGet(MERGED_FEATURES)$path)
 cleaned.data <- data %>% 
     drop_na(c("x_step_duration_md",
               "x_step_duration_iqr",
@@ -93,7 +107,7 @@ cleaned.data <- data %>%
             TRUE ~ "No Lower Joint Pain")) %>%
     dplyr::select(
         participantId, age, sex, diagnosis, 
-        matches("pain|step|stride|symmetry|cadence"))
+        matches("pain|step|stride|symmetry|cadence|enthesitis"))
 ```
 
 ### Samples of Reported Pain/No-Pain
@@ -176,6 +190,7 @@ purrr::map(names(features_mapping), function(feature){
     get_feature_boxplot(
         data = cleaned.data,
         feature = feature,
+        metric = "has_lower_pain",
         title = feature_info$title,
         x = feature_info$x,
         y = feature_info$y)}) %>% 
@@ -183,5 +198,21 @@ purrr::map(names(features_mapping), function(feature){
                           guides = "collect",
                           heights = 5)
 ```
+
+```{r echo = FALSE, fig.width = 13, fig.height = 18, warning = FALSE, message = FALSE}
+purrr::map(names(features_mapping), function(feature){
+    feature_info <- features_mapping[[feature]]
+    get_feature_boxplot(
+        data = cleaned.data,
+        feature = feature,
+        metric = "has_lower_enthesitis",
+        title = feature_info$title,
+        x = feature_info$x,
+        y = feature_info$y)}) %>% 
+    patchwork::wrap_plots(ncol = 2, 
+                          guides = "collect",
+                          heights = 5)
+```
+
 
 
