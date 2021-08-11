@@ -58,11 +58,11 @@ ppacman <-  synTableQuery("SELECT *  FROM syn25006883")$asDataFrame() %>%
                   visit_num = `Visit Number`, 
                   ent_loc =`Enthesitis Label`) %>%
     dplyr::mutate(has_lower_enthesitis = ifelse(str_detect(ent_loc, "knee|achilles"), 
-                                                "has lower enthesitis", 
-                                                "no lower enthesitis"),
+                                                TRUE, 
+                                                FALSE),
                   has_upper_enthesitis = ifelse(str_detect(ent_loc, "arm"), 
-                                                "has upper enthesitis", 
-                                                "no upper enthesitis"))
+                                                TRUE, 
+                                                FALSE))
 
 data <- data %>%
     dplyr::left_join(ppacman, by = c("participantId", "visit_num"))
@@ -88,23 +88,27 @@ cleaned.data <- data %>%
         complete_case_swollen_joint_list = coalesce(
             complete_case_swollen_joint_list,  sjc_backup)) %>%
     dplyr::mutate(
-        has_lower_pain = case_when(
+        has_lower_joint_pain = case_when(
             stringr::str_detect(
                 complete_case_joint_pain_list, 
-                "knee|hip|ankle") ~ "Has Lower Joint Pain", 
-            TRUE ~ "No Lower Joint Pain"),
+                "knee|hip|ankle") ~ TRUE, 
+            TRUE ~ FALSE),
         knee_pain = case_when(
             stringr::str_detect(
-                complete_case_joint_pain_list, "knee") ~ "Knee Pain", 
-            TRUE ~  "No Lower Joint Pain"),
+                complete_case_joint_pain_list, "knee") ~ TRUE, 
+            TRUE ~  FALSE),
         hip_pain = case_when(
             stringr::str_detect(
-                complete_case_joint_pain_list, "hip") ~ "Hip Pain", 
-            TRUE ~  "No Lower Joint Pain"),
+                complete_case_joint_pain_list, "hip") ~ TRUE, 
+            TRUE ~  FALSE),
         ankle_pain = case_when(
             stringr::str_detect(
-                complete_case_joint_pain_list, "ankle") ~ "Ankle Pain", 
-            TRUE ~ "No Lower Joint Pain")) %>%
+                complete_case_joint_pain_list, "ankle") ~ TRUE, 
+            TRUE ~ FALSE)) %>%
+    dplyr::mutate(has_lower_pain = case_when(
+        (has_lower_joint_pain == TRUE | has_lower_enthesitis == TRUE) ~ TRUE,
+        TRUE ~ FALSE
+    )) %>%
     dplyr::select(
         participantId, age, sex, diagnosis, 
         matches("pain|step|stride|symmetry|cadence|enthesitis"))
@@ -126,6 +130,8 @@ knitr::kable(list(pain_no_pain, gender_break_down))
 ```
 
 ### Demographics Distribution
+
+### a. Pain vs no Pain
 ```{r, echo = FALSE, fig.width = 10, fig.height = 5, warning = FALSE, message = FALSE}
 ggplot(data=cleaned.data %>% dplyr::filter(sex != ""), 
        aes(x=has_lower_pain, y = age, fill = sex)) +
@@ -138,6 +144,7 @@ ggplot(data=cleaned.data %>% dplyr::filter(sex != ""),
     theme(plot.subtitle = element_text(family = "sans", size = 15),
           plot.title = element_text(family = "sans", size = 20))
 ```
+
 
 ```{r echo = FALSE}
 # get features mapping
@@ -183,14 +190,14 @@ features_mapping <- list(
 ```
 
 
-### Walk 30secs Feature Comparison for Lower Joints Pain/No-Pain
+### b. Walk 30secs Feature Comparison for Lower Joints Pain/No-Pain
 ```{r echo = FALSE, fig.width = 13, fig.height = 18, warning = FALSE, message = FALSE}
 purrr::map(names(features_mapping), function(feature){
     feature_info <- features_mapping[[feature]]
     get_feature_boxplot(
         data = cleaned.data,
         feature = feature,
-        metric = "has_lower_pain",
+        metric = "has_lower_joint_pain",
         title = feature_info$title,
         x = feature_info$x,
         y = feature_info$y)}) %>% 
@@ -199,6 +206,8 @@ purrr::map(names(features_mapping), function(feature){
                           heights = 5)
 ```
 
+
+### c. Walk 30secs Feature Comparison for Lower Joints Enthesitis Labels
 ```{r echo = FALSE, fig.width = 13, fig.height = 18, warning = FALSE, message = FALSE}
 purrr::map(names(features_mapping), function(feature){
     feature_info <- features_mapping[[feature]]
@@ -214,5 +223,19 @@ purrr::map(names(features_mapping), function(feature){
                           heights = 5)
 ```
 
-
+### d. Walk 30secs Feature Comparison for Lower Joints Combined (Enthesitis + Lower Pain) Labels
+```{r echo = FALSE, fig.width = 13, fig.height = 18, warning = FALSE, message = FALSE}
+purrr::map(names(features_mapping), function(feature){
+    feature_info <- features_mapping[[feature]]
+    get_feature_boxplot(
+        data = cleaned.data,
+        feature = feature,
+        metric = "has_lower_pain",
+        title = feature_info$title,
+        x = feature_info$x,
+        y = feature_info$y)}) %>% 
+    patchwork::wrap_plots(ncol = 2, 
+                          guides = "collect",
+                          heights = 5)
+```
 

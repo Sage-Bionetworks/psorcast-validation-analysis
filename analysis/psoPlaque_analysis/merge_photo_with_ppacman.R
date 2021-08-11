@@ -20,7 +20,7 @@ ANNOTATIONS_PARENT_ID <- "syn25614357"
 MERGED_PARENT_ID <- "syn25614358"
 PPACMAN_TBL <- "syn25006883"
 OUTPUT_FILENAME <- "merged_gold_standard.tsv"
-IMAGE_REF_PARENT_FOLDER <- "syn22367762"
+IMAGE_REF_PARENT_FOLDER <- "syn25837659"
 SYNAPSE_URL_HEADER <- "https://www.synapse.org/#!Synapse:"
 MERGE_SCRIPT <- "merge_photo_with_ppacman.R"
 WIKI_SCRIPT <- "generate_concordance_conf_matrix.R"
@@ -32,13 +32,13 @@ MERGE_GIT_URL <- getPermlink(
         repository = GIT_REPO, 
         ref="branch", 
         refName='master'), 
-    repositoryPath = file.path('annotator_concordance_analysis', MERGE_SCRIPT))
+    repositoryPath = file.path('analysis/psoPlaque_analysis', MERGE_SCRIPT))
 WIKI_GIT_URL <- getPermlink(
     repository = getRepo(
         repository = GIT_REPO, 
         ref="branch", 
         refName='master'), 
-    repositoryPath = file.path('annotator_concordance_analysis', WIKI_SCRIPT))
+    repositoryPath = file.path('analysis/psoPlaque_analysis', WIKI_SCRIPT))
 
 
 ##############################
@@ -51,8 +51,7 @@ get_all_annotations_from_folder <- function(){
             annot_data <- fread(entity$path) %>% 
                 dplyr::mutate(source_id = child$id)}) %>% 
         purrr::reduce(rbind) %>%
-        dplyr::select(participantId = participantID, 
-                      annot_pga = PGA,
+        dplyr::select(annot_pga = PGA,
                       annot_erythema = erythema,
                       annot_induration = induration,
                       annot_scaling = scaling,
@@ -168,7 +167,7 @@ main <- function(){
         visit_ref_data,
         folder_image_ref)
     
-    source("annotator_concordance_analysis/generate_concordance_conf_matrix.R")
+    source("analysis/psoPlaque_analysis/generate_concordance_conf_matrix.R")
 }
 
 main()

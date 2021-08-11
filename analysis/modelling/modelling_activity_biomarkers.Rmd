@@ -158,15 +158,37 @@ all_features <- data %>%
 ```
 
 ```{r}
-features <- all_features %>% 
-    dplyr::select(upper_body_pain, matches("djo")) %>%
-    drop_na()
-feature_split <- initial_split(features, prop = 0.75)
+djo_features <- all_features %>% 
+    dplyr::select(participantId, visit_num, 
+                  upper_enthesis,
+                  upper_body_pain, 
+                  matches("djo|rotation")) %>%
+    drop_na() %>% 
+    readr::write_tsv("djo_features_labelled.tsv")
+
+walk_features <- all_features %>% 
+    dplyr::select(participantId, 
+                  visit_num,
+                  lower_enthesis,
+                  lower_body_pain, 
+                  matches("^x_")) %>%
+    drop_na() %>% 
+    readr::write_tsv("walk_features_labelled.tsv")
+
+
+file <- synapser::File("djo_features_labelled.tsv", parent = "syn26014254")
+synStore(file)
+unlink(file$path)
+
+file <- synapser::File("walk_features_labelled.tsv", parent = "syn26014254")
+synStore(file)
+unlink(file$path)
 ```
+
 
 ```{r}
 set.seed(1000)
-model <- rand_forest(trees = 100) %>% 
+model <- rand_forest(trees = 1000, ) %>% 
     set_engine("randomForest") %>% 
     set_mode("classification")
 ```
@@ -177,7 +199,7 @@ model <- rand_forest(trees = 100) %>%
 set.seed(1000)
 
 djo_features <- all_features %>% 
-    dplyr::select(upper_body_pain, matches("djo")) %>%
+    dplyr::select(upper_body_pain, matches("djo|rotation")) %>%
     drop_na()
 feature_split <- initial_split(djo_features, prop = 0.7)
 
@@ -201,6 +223,10 @@ auc_plot <- model_pred %>%
     
 
 auc
+```
+
+
+```{r}
 auc_plot
 ```
 
@@ -237,6 +263,11 @@ auc
 auc_plot
 ```
 
+```{r}
+djo_features %>% 
+    dplyr::group_by(upper_body_pain) %>%
+    dplyr::summarise(n())
+```
 
 ```{r}
 run_cv <- function(training_data, 
