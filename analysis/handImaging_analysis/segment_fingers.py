@@ -17,7 +17,6 @@ import synapseutils # to download files using folder structure
 import pandas as pd # data frames
 from matplotlib import pyplot as plt # plotting
 import mediapipe as mp # for detecting hand landmarks
-import seaborn as sns # for violin plot
 import timeit # to track program running time
 from synapseclient import Column, Schema, Table
 
@@ -34,6 +33,8 @@ NAILS_RERCT_OUTPUT_FILE = 'nail_bounding_rects.tsv'
 ## Table Global Variables
 TABLE_NAME = "HandImaging-FingerSegmentation"
 PARENT_ID = "syn22276946"
+
+GIT_URL = 'https://github.com/itismeghasyam/psorcastValidationAnalysis/blob/master/feature_extraction/nail_segmentation_mediapipe_pipeline.ipynb'
 
 # mediapipe objectt
 mp_drawing = mp.solutions.drawing_utils
@@ -630,8 +631,8 @@ aa.to_csv(output_file, sep = '\t')
 activity = synapseclient.Activity(
     name='get nail bounding box',
     description='Minimum bounding rectangle for nails (except thumb). Each rectangle is of the form (center, size, theta)',
-    used = 'syn25999658',
-    executed = 'https://github.com/itismeghasyam/psorcastValidationAnalysis/blob/master/feature_extraction/nail_segmentation_mediapipe_pipeline.ipynb')
+    used = FUSE_IMAGE_MAPPING_FOLDER_ID,
+    executed = GIT_URL)
 file = synapseclient.File(
     output_file,
     description='Minimum bounding rectangle for nails (except thumb). Each rectangle is of the form (center, size, theta)',
@@ -669,7 +670,7 @@ for row in table["path"]:
 # store tables
 table["finger_segments"] = row_ids
 table = table[["recordId", "createdOn", "participantId", "finger_key", "finger_segments"]]
-syn.store(Table(schema, table))
+syn.store(Table(schema, table), activity = )
 
 # clean everything
 clean_files(["manifest.tsv", NAILS_RERCT_OUTPUT_FILE])
