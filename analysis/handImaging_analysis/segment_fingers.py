@@ -18,7 +18,7 @@ import pandas as pd # data frames
 from matplotlib import pyplot as plt # plotting
 import mediapipe as mp # for detecting hand landmarks
 import timeit # to track program running time
-from synapseclient import Column, Schema, Table
+from synapseclient import Column, Schema, Table, Activity, File
 
 # Global Variables
 ORIG_IMAGE_MAPPING_FOLDER_ID = "syn25837496"
@@ -33,8 +33,7 @@ NAILS_RERCT_OUTPUT_FILE = 'nail_bounding_rects.tsv'
 ## Table Global Variables
 TABLE_NAME = "HandImaging-FingerSegmentation"
 PARENT_ID = "syn22276946"
-
-GIT_URL = 'https://github.com/itismeghasyam/psorcastValidationAnalysis/blob/master/feature_extraction/nail_segmentation_mediapipe_pipeline.ipynb'
+GIT_URL = "https://github.com/arytontediarjo/psorcast-validation-analysis/blob/model/analysis/handImaging_analysis/segment_fingers.py"
 
 # mediapipe objectt
 mp_drawing = mp.solutions.drawing_utils
@@ -628,12 +627,12 @@ output_file = os.path.join(
 aa.to_csv(output_file, sep = '\t')
 
 # Upload results to Synapse
-activity = synapseclient.Activity(
+activity = Activity(
     name='get nail bounding box',
     description='Minimum bounding rectangle for nails (except thumb). Each rectangle is of the form (center, size, theta)',
     used = FUSE_IMAGE_MAPPING_FOLDER_ID,
     executed = GIT_URL)
-file = synapseclient.File(
+file = File(
     output_file,
     description='Minimum bounding rectangle for nails (except thumb). Each rectangle is of the form (center, size, theta)',
     parent=NAILS_RECT_OUTPUT_ID)
@@ -670,7 +669,13 @@ for row in table["path"]:
 # store tables
 table["finger_segments"] = row_ids
 table = table[["recordId", "createdOn", "participantId", "finger_key", "finger_segments"]]
-syn.store(Table(schema, table), activity = )
+syn.store(
+    Table(schema, table), 
+    activity = Activity(
+        name = "generate tables for segmented fingers",
+        used = SEGMENTED_NAIL_OUTPUT_ID,
+        executed = GIT_URL
+    ))
 
 # clean everything
 clean_files(["manifest.tsv", NAILS_RERCT_OUTPUT_FILE])
