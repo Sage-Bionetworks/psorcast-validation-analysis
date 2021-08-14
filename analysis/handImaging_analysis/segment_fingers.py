@@ -671,13 +671,6 @@ table["finger_segments"] = row_ids
 table = table[["recordId", "createdOn", "participantId", "finger_key", "finger_segments"]]
 syn.store(Table(schema, table))
     
-syn.setProvenance("syn26050060", 
-                 activity = synapseclient.Activity(
-        name = "generate tables for segmented fingers",
-        used = SEGMENTED_NAIL_OUTPUT_ID,
-        executed = GIT_URL
-    ))
-
 # clean everything
 clean_files(["manifest.tsv", NAILS_RERCT_OUTPUT_FILE])
 clean_directories([TARGET_DIRECTORY, TARGET_NAILS_DIR, OUTPUT_DIRECTORY])
