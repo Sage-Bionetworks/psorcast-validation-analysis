@@ -669,9 +669,10 @@ for row in table["path"]:
 # store tables
 table["finger_segments"] = row_ids
 table = table[["recordId", "createdOn", "participantId", "finger_key", "finger_segments"]]
-syn.store(
-    Table(schema, table), 
-    activity = Activity(
+syn.store(Table(schema, table))
+    
+syn.setProvenance("syn26050060", 
+                 activity = synapseclient.Activity(
         name = "generate tables for segmented fingers",
         used = SEGMENTED_NAIL_OUTPUT_ID,
         executed = GIT_URL
