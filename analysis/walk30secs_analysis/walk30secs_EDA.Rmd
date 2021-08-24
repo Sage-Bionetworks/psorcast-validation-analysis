@@ -105,7 +105,7 @@ cleaned.data <- data %>%
             stringr::str_detect(
                 complete_case_joint_pain_list, "ankle") ~ TRUE, 
             TRUE ~ FALSE)) %>%
-    dplyr::mutate(has_lower_pain = case_when(
+    dplyr::mutate(combined_lower_pain = case_when(
         (has_lower_joint_pain == TRUE | has_lower_enthesitis == TRUE) ~ TRUE,
         TRUE ~ FALSE
     )) %>%
@@ -117,14 +117,14 @@ cleaned.data <- data %>%
 ### Samples of Reported Pain/No-Pain
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 pain_no_pain <- cleaned.data %>% 
-                 dplyr::group_by(has_lower_pain) %>% 
+                 dplyr::group_by(combined_lower_pain) %>% 
                  dplyr::summarise(n = n()) %>%
-                 dplyr::select(status = has_lower_pain, everything())
+                 dplyr::select(status = combined_lower_pain, everything())
 
 gender_break_down <- cleaned.data %>% 
-                 dplyr::group_by(sex, has_lower_pain) %>% 
+                 dplyr::group_by(sex, combined_lower_pain) %>% 
                  dplyr::summarise(n = n()) %>%
-                 dplyr::select(sex, status = has_lower_pain, everything())
+                 dplyr::select(sex, status = combined_lower_pain, everything())
 
 knitr::kable(list(pain_no_pain, gender_break_down))
 ```
@@ -134,7 +134,7 @@ knitr::kable(list(pain_no_pain, gender_break_down))
 ### a. Pain vs no Pain
 ```{r, echo = FALSE, fig.width = 10, fig.height = 5, warning = FALSE, message = FALSE}
 ggplot(data=cleaned.data %>% dplyr::filter(sex != ""), 
-       aes(x=has_lower_pain, y = age, fill = sex)) +
+       aes(x=combined_lower_pain, y = age, fill = sex)) +
     geom_boxplot(width = 0.5, alpha = 0.5) +
     geom_jitter(position=position_dodge(0.5)) +
     labs(title = "Demographics Distribution (Differentiated by Gender)") +
@@ -230,7 +230,7 @@ purrr::map(names(features_mapping), function(feature){
     get_feature_boxplot(
         data = cleaned.data,
         feature = feature,
-        metric = "has_lower_pain",
+        metric = "combined_lower_pain",
         title = feature_info$title,
         x = feature_info$x,
         y = feature_info$y)}) %>% 
