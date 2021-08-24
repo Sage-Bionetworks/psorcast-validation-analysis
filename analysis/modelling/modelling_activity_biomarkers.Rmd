@@ -1,0 +1,339 @@
+```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+library(synapser)
+library(knit2synapse)
+library(tidyverse)
+library(dplyr)
+library(githubr)
+library(ggplot2)
+library(ggpval)
+library(ggExtra)
+library(ggpubr)
+library(data.table)
+library(patchwork)
+library(tidymodels)
+
+knitr::opts_chunk$set(cache = FALSE)
+synLogin()
+
+set.seed(1000)
+```
+
+## About
+
+```{r, echo = FALSE}
+MERGED_FEATURES <- "syn25832975"
+```
+
+```{r echo = FALSE}
+get_feature_boxplot <- function(data, feature, metric, title, x, y){
+    ggplot(data=data, 
+       aes_string(
+           x = metric, 
+           y = feature,
+           fill = metric)) +
+    geom_boxplot(
+        alpha =  0.5,
+        width = 0.5/length(unique(data[[metric]]))) +
+    geom_dotplot(binaxis='y', 
+                 stackdir='center', 
+                 dotsize=0.7, 
+                 fill = "black", 
+                 alpha = 0.5) +
+    ggpubr::stat_compare_means() +
+    labs(
+        title = title,
+        x = x, 
+        y = y) +
+    theme_minimal() +  
+    theme(plot.subtitle = 
+              element_text(family = "sans", size = 4,),
+          axis.text.x = 
+              element_blank())
+}
+
+
+get_walk_features <- function(data){
+    data %>% 
+        drop_na(c("x_step_duration_md",
+                  "x_step_duration_iqr",
+                  "x_stride_deviation_md",
+                  "x_stride_deviation_iqr",
+                  "x_cadence_md",
+                  "x_cadence_iqr",
+                  "x_symmetry_md",
+                  "x_symmetry_iqr")) %>%
+        dplyr::mutate(
+            complete_case_joint_pain_list = gs_jc_joint_list,
+            complete_case_swollen_joint_list = gs_swell_joint_list) %>%
+        dplyr::mutate(
+            complete_case_joint_pain_list = coalesce(
+                complete_case_joint_pain_list,  tjc_backup),
+            complete_case_swollen_joint_list = coalesce(
+                complete_case_swollen_joint_list,  sjc_backup)) %>%
+        dplyr::mutate(
+            has_lower_pain = case_when(
+                stringr::str_detect(
+                    complete_case_joint_pain_list, 
+                    "knee|hip|ankle") ~ 1, TRUE ~ 0),
+            knee_pain = case_when(
+                stringr::str_detect(
+                    complete_case_joint_pain_list, "knee") ~ 1, TRUE ~  0),
+            hip_pain = case_when(
+                stringr::str_detect(
+                    complete_case_joint_pain_list, "hip") ~ 1, TRUE ~  0),
+            ankle_pain = case_when(
+                stringr::str_detect(
+                    complete_case_joint_pain_list, "ankle") ~ 1, TRUE ~ 0))
+}
+
+get_total_rotation <- function(data){
+    data %>% 
+        dplyr::rowwise() %>% 
+        dplyr::mutate(total_rotation = sum(
+            djo_leftCounter, djo_rightCounter,
+            djo_leftClockwise, djo_rightClockwise)) 
+}
+
+filter_features <- function(data){
+    data %>% 
+        dplyr::select(
+            participantId, 
+            visit_num, 
+            matches("djo|pain|x_step|x_stride|x_symmetry|x_cadence|enthesitis|total_rotation|diagnosis"))
+}
+
+get_upper_body_pain <- function(data){
+    data %>%
+        dplyr::rowwise() %>% 
+        dplyr::mutate(dig_upper_body_pain = 
+                          !(is.na(dig_jc_status_wrist) & 
+                                is.na(dig_jc_status_elbow) & 
+                                is.na(dig_jc_status_shoulder))) %>%
+        dplyr::mutate(gs_upper_body_pain = 
+                          !(is.na(gs_jc_status_wrist) & 
+                                is.na(gs_jc_status_elbow) & 
+                                is.na(gs_jc_status_shoulder))) %>%
+        dplyr::mutate(gs_upper_body_swell = 
+                          !(is.na(gs_swell_status_wrist) & 
+                                is.na(gs_swell_status_elbow) & 
+                                is.na(gs_swell_status_shoulder)))
+}
+
+annotate_classes <- function(data){
+    data %>%
+        dplyr::mutate(upper_body_pain = gs_upper_body_pain,
+                      lower_body_pain = ifelse(has_lower_pain == 1, TRUE, FALSE),
+                      upper_enthesis =  ifelse(has_upper_enthesitis == 1, TRUE, FALSE),
+                      lower_enthesis =  ifelse(has_lower_enthesitis == 1, TRUE, FALSE)) %>% 
+        dplyr::mutate(upper_body_pain = factor(upper_body_pain, level = c(FALSE, TRUE)),
+                      lower_body_pain = factor(lower_body_pain, level = c(FALSE, TRUE)),
+                      upper_enthesis = factor(upper_enthesis, level = c(FALSE, TRUE)),
+                      lower_enthesis = factor(lower_enthesis, level = c(FALSE, TRUE)))
+}
+```
+
+```{r, echo = FALSE}
+data <-  fread(synGet(MERGED_FEATURES)$path)
+
+ppacman <-  synTableQuery("SELECT *  FROM syn25006883")$asDataFrame() %>% 
+    dplyr::select(participantId, 
+                  visit_num = `Visit Number`, 
+                  ent_loc =`Enthesitis Label`) %>%
+    dplyr::mutate(
+        has_lower_enthesitis = ifelse(str_detect(ent_loc, "knee|achilles"), 1, 0),
+        has_upper_enthesitis = ifelse(str_detect(ent_loc, "arm"), 1, 0))
+
+data <- data %>%
+    dplyr::left_join(ppacman, by = c("participantId", "visit_num"))
+```
+
+
+```{r, echo = FALSE}
+all_features <- data %>%
+    get_total_rotation() %>%
+    get_walk_features() %>%
+    get_upper_body_pain() %>%
+    filter_features()  %>%
+    annotate_classes()
+```
+
+```{r}
+djo_features <- all_features %>% 
+    dplyr::select(participantId, visit_num, 
+                  upper_enthesis,
+                  upper_body_pain, 
+                  matches("djo|rotation")) %>%
+    drop_na() %>% 
+    readr::write_tsv("djo_features_labelled.tsv")
+
+walk_features <- all_features %>% 
+    dplyr::select(participantId, 
+                  visit_num,
+                  lower_enthesis,
+                  lower_body_pain, 
+                  matches("^x_")) %>%
+    drop_na() %>% 
+    readr::write_tsv("walk_features_labelled.tsv")
+
+
+file <- synapser::File("djo_features_labelled.tsv", parent = "syn26014254")
+synStore(file)
+unlink(file$path)
+
+file <- synapser::File("walk_features_labelled.tsv", parent = "syn26014254")
+synStore(file)
+unlink(file$path)
+```
+
+
+```{r}
+set.seed(1000)
+model <- rand_forest(trees = 1000, ) %>% 
+    set_engine("randomForest") %>% 
+    set_mode("classification")
+```
+
+## upper body
+
+```{r}
+set.seed(1000)
+
+djo_features <- all_features %>% 
+    dplyr::select(upper_body_pain, matches("djo|rotation")) %>%
+    drop_na()
+feature_split <- initial_split(djo_features, prop = 0.7)
+
+model_fit <- model %>% fit(upper_body_pain ~ ., 
+                           data = training(feature_split))
+model_pred <- testing(feature_split) %>% 
+    drop_na() %>%
+    bind_cols(predict(model_fit, ., type = "prob")) %>%
+    bind_cols(predict(model_fit, .))
+
+auc <- model_pred %>%
+    metrics(upper_body_pain, 
+            .pred_TRUE, 
+            estimate = .pred_class)
+    
+auc_plot <- model_pred %>% 
+    roc_curve(upper_body_pain, 
+              .pred_TRUE) %>%
+    autoplot() + 
+    theme_minimal()
+    
+
+auc
+```
+
+
+```{r}
+auc_plot
+```
+
+
+## lower body
+
+```{r}
+set.seed(1000)
+
+walk_features <- all_features %>% 
+    dplyr::select(lower_body_pain, matches("x_")) %>%
+    drop_na()
+feature_split <- initial_split(walk_features, prop = 0.75)
+
+model_fit <- model %>% fit(lower_body_pain ~ ., 
+                           data = training(feature_split))
+model_pred <- testing(feature_split) %>% 
+    drop_na() %>%
+    bind_cols(predict(model_fit, ., type = "prob")) %>%
+    bind_cols(predict(model_fit, .))
+
+auc <- model_pred %>%
+    metrics(lower_body_pain, 
+            .pred_TRUE, 
+            estimate = .pred_class)
+    
+auc_plot <- model_pred %>% 
+    roc_curve(lower_body_pain, 
+              .pred_TRUE) %>%
+    autoplot(pval = TRUE, CI = TRUE) +
+    theme_minimal()
+
+auc
+auc_plot
+```
+
+```{r}
+djo_features %>% 
+    dplyr::group_by(upper_body_pain) %>%
+    dplyr::summarise(n())
+```
+
+```{r}
+run_cv <- function(training_data, 
+                   model, 
+                   formula,
+                   kfold = 5,
+                   repeats = 1,
+                   strata = NULL){
+    folds <- vfold_cv(training_data %>% 
+                          drop_na(),
+                      v = kfold,
+                      strata = strata,
+                      pool = 0.1,
+                      repeats = repeats
+                    )
+    rf_wf <- 
+        workflow() %>%
+        add_model(model) %>%
+        add_formula(formula = formula)
+    rf_wf %>% 
+        fit_resamples(folds) 
+}
+```
+
+
+# splits
+
+```{r}
+set.seed(1000)
+cv_djo_result <- run_cv(
+    training_data = djo_features,
+    model = model,
+    formula = as.formula("upper_body_pain ~ ."),
+    kfold = 5,
+    strata = "upper_body_pain",
+    repeats = 5)
+
+
+cv_walk_result <- run_cv(
+    training_data = walk_features,
+    model = model,
+    formula = as.formula("lower_body_pain ~ ."),
+    kfold = 5,
+    strata = "lower_body_pain",
+    repeats = 5)
+```
+
+
+```{r}
+cv_result <- list(
+    djo = cv_djo_result$.metrics %>% 
+        purrr::reduce(rbind) %>%
+        dplyr::mutate(activity = 'djo'),
+    walk = cv_walk_result$.metrics %>% 
+        purrr::reduce(rbind) %>%
+        dplyr::mutate(activity = 'walk')) %>%
+    purrr::reduce(rbind) %>%
+    ggplot(aes(x = activity, y = .estimate)) +
+    geom_boxplot() +
+    geom_jitter(position=position_jitter(0.2), alpha = 0.5) +
+    geom_hline(yintercept = 0.5, 
+               linetype = "twodash",
+               color = "red") +
+    theme_minimal() +
+    facet_grid(~ .metric)
+
+cv_result
+```
+
