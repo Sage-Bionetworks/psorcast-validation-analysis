@@ -21,7 +21,7 @@ import timeit # to track program running time
 from synapseclient import Column, Schema, Table, Activity, File
 
 # Global Variables
-ORIG_IMAGE_MAPPING_FOLDER_ID = "syn25837496"
+FULL_RES_IMAGE_MAPPING_FOLDER_ID = 'syn25837496'
 FUSE_IMAGE_MAPPING_FOLDER_ID = 'syn25999658'
 SEGMENTED_NAIL_OUTPUT_ID = "syn25999657"
 NAILS_RECT_OUTPUT_ID = 'syn22342373'
@@ -417,6 +417,10 @@ def process_hand_images(data,
 
         ### left hand
         bw_img = getBinaryImage(img)
+        
+        # resize the left hand mask to match that of the original image
+        img_shape = orig_img.shape[0:2]
+        bw_img = cv.resize(bw_img, (img_shape[1], img_shape[0]), interpolation = cv.INTER_AREA)
 
         ###
         contours_hull = getContoursAndHull(bw_img)
@@ -564,26 +568,28 @@ create_directories()
 
 # fetch images from Synapse and direct it into 
 # the right directory
-original_image_mapping = get_original_image_mapping(
-    ORIG_IMAGE_MAPPING_FOLDER_ID)
+full_res_image_mapping = get_original_image_mapping(
+    FULL_RES_IMAGE_MAPPING_FOLDER_ID)
 fuse_image_mapping = get_image_fuse_mapping(
     FUSE_IMAGE_MAPPING_FOLDER_ID, 
     OUTPUT_DIRECTORY)
 
-# merge all mapping
+# # merge all mapping
 image_mapping = pd.merge(
-    original_image_mapping, 
+    full_res_image_mapping, 
     fuse_image_mapping, 
     on = "name", 
     how = "inner")
 
-# get fingers segmentation
+# # get fingers segmentation
 left_fingers_data = process_hand_images(
     data = image_mapping,
     target_directory = TARGET_DIRECTORY,
     target_nails_directory = TARGET_NAILS_DIR,
     img_all_directory = OUTPUT_DIRECTORY,
     which_hand = "left")
+
+
 right_fingers_data = process_hand_images(
     data = image_mapping,
     target_directory = TARGET_DIRECTORY,
