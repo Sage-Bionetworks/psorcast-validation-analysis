@@ -37,7 +37,7 @@ SCRIPT_PATH <- file.path('analysis',
 GIT_TOKEN_PATH <- config::get("git")$token_path
 GIT_REPO <- config::get("git")$repo
 githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-githubr::getPermlink(
+GIT_URL <- githubr::getPermlink(
     repository = githubr::getRepo(
         repository = GIT_REPO, 
         ref="branch", 
