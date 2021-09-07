@@ -33,10 +33,10 @@ FILE_COLUMNS <- c("leftClockwise_motion.json",
                   "rightCounter_motion.json")
 OUTPUT_REF <- list(
     feature = list(
-        output = 'djo_features_v2.tsv',
+        output = 'DigitalJarOpen_features_v2.tsv',
         parent = "syn22337134"),
     log = list(
-        output = 'error_log_djo_features_v2.tsv',
+        output = 'removed_rows_DigitalJarOpen_features_v2.tsv',
         parent = "syn25832341")
 )
 
@@ -49,7 +49,7 @@ GIT_URL <- githubr::getPermlink(
     repository = getRepo(
         repository = GIT_REPO, 
         ref="branch", 
-        refName='main'), 
+        refName='model'), 
     repositoryPath = SCRIPT_PATH)
 
 
