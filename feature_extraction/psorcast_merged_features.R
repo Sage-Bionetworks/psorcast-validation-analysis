@@ -38,7 +38,7 @@ PARENT_REF <- list(
 PPACMAN_TBL_ID <- "syn22337133"
 PARENT_SYN_ID <- "syn22346256"
 FEATURES_ID <- list(
-    djo = "syn25931368",
+    djo = "syn26158358",
     dig_jc = "syn25830490",
     gs_jc = "syn25832772",
     gs_swell = "syn25832774",
