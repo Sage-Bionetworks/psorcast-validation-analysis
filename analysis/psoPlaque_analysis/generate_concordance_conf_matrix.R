@@ -42,8 +42,8 @@ save_conf_mat_to_wiki <- function(data){
                 subtitle = output_subtitle,
                 theme = theme(
                     plot.title = element_text(size = 20),
-                    plot.subtitle = element_text(size = 13, margin=margin(30,0,30,0)))) +
-            ggsave(output_filename, width = 10, height = 10)
+                    plot.subtitle = element_text(size = 13, margin=margin(30,0,30,0))))
+        ggsave(output_filename, save_plot,  width = 10, height = 10)
         entity <- synGet(synId)
         content <- paste0("${image?fileName=", 
                           output_filename, 
