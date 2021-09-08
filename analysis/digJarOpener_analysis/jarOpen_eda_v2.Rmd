@@ -28,6 +28,18 @@ MERGED_FEATURES <- "syn25832975"
 
 ```{r echo = FALSE}
 data <-  fread(synGet(MERGED_FEATURES)$path)
+
+ppacman <-  synTableQuery("SELECT *  FROM syn25006883")$asDataFrame() %>% 
+    dplyr::select(participantId, 
+                  visit_num = `Visit Number`, 
+                  ent_loc =`Enthesitis Label`) %>%
+    dplyr::mutate(has_upper_enthesitis = ifelse(
+        str_detect(ent_loc, "arm"), TRUE, FALSE)) %>%
+    dplyr::select(participantId, visit_num, has_upper_enthesitis)
+
+data <- data %>%
+    dplyr::left_join(ppacman, by = c("participantId", "visit_num"))
+
 ```
 
 ```{r echo = FALSE}
@@ -63,7 +75,14 @@ get_upper_body_pain <- function(data){
         dplyr::mutate(gs_upper_body_swell = 
                           !(is.na(gs_swell_status_wrist) & 
                                 is.na(gs_swell_status_elbow) & 
-                                is.na(gs_swell_status_shoulder)))
+                                is.na(gs_swell_status_shoulder))) %>%
+        dplyr::mutate(dig_upper_body_pain_enthesitis = 
+                          dig_upper_body_pain | has_upper_enthesitis,
+                      gs_upper_body_pain_enthesitis = 
+                          gs_upper_body_pain | has_upper_enthesitis,
+                      gs_upper_body_swell_enthesitis = 
+                          gs_upper_body_swell | has_upper_enthesitis,
+                      )
 }
 
 plot_boxplot <- function(data, group, value){
@@ -71,8 +90,8 @@ plot_boxplot <- function(data, group, value){
         dplyr::select(total_rotation, 
                       any_of(group),
                       any_of(value)) %>%
-        ggplot(aes_string(x = group, y = value)) +
-        geom_boxplot() +
+        ggplot(aes_string(x = group, y = value, fill = group)) +
+        geom_boxplot(alpha = 0.5) +
         geom_jitter(position=position_jitter(0.1), alpha = 0.5) +
         ggpubr::stat_compare_means() +
         theme_minimal()
@@ -106,9 +125,8 @@ features <- data %>%
     get_total_rotation()
 ```
 
-
-### Rotation Ratios
-```{r, echo = FALSE, fig.width = 8, fig.height = 10, warning = FALSE, message = FALSE}
+### a. Rotation Ratios
+```{r, echo = FALSE, fig.width = 13, fig.height = 10, warning = FALSE, message = FALSE}
 # digital measures
 dig_measures_pain <- purrr::map(c("djo_inward_ratio", "djo_outward_ratio"),
                            function(metric){
@@ -145,8 +163,8 @@ ratio_plot
 ```
 
 
-### Total Rotation
-```{r, echo = FALSE, fig.width = 8, fig.height = 4, warning = FALSE, message = FALSE}
+### b. Total Rotation
+```{r, echo = FALSE, fig.width = 15, fig.height = 4, warning = FALSE, message = FALSE}
 # digital measures
 dig_measures_pain <- purrr::map(c("total_rotation"),
                            function(metric){
@@ -182,8 +200,45 @@ rotation_plot <- patchwork::wrap_plots(dig_measures_pain,
 rotation_plot
 ```
 
-### Dig Joint Pain  - Reported Upper Body Pain to Total Rotation
-```{r, echo = FALSE, fig.width = 8, fig.height = 5, warning = FALSE, message = FALSE}
+### c. Total Rotation + Enthesitis
+```{r, echo = FALSE, fig.width = 15, fig.height = 4, warning = FALSE, message = FALSE}
+# digital measures
+dig_measures_pain <- purrr::map(c("total_rotation"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "dig_upper_body_pain_enthesitis", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 1)
+
+# gold standard
+gs_measures_pain <- purrr::map(c("total_rotation"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "gs_upper_body_pain_enthesitis", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 1)
+
+# gold standard
+gs_measures_swell <- purrr::map(c("total_rotation"),
+                           function(metric){
+                               features %>% 
+                                   plot_boxplot(
+                                       group = "gs_upper_body_swell_enthesitis", 
+                                       value = metric)}) %>%
+    patchwork::wrap_plots(ncols = 1)
+
+rotation_plot <- patchwork::wrap_plots(dig_measures_pain, 
+                      gs_measures_pain, 
+                      gs_measures_swell,
+                      ncol = 3)
+
+rotation_plot
+```
+
+### d. Dig Joint Pain  - Reported Upper Body Pain to Total Rotation
+```{r, echo = FALSE, fig.width = 13, fig.height = 4, warning = FALSE, message = FALSE}
 metrics <- c("dig_jc_status_wrist",
              "dig_jc_status_elbow",
              "dig_jc_status_shoulder")
@@ -200,8 +255,8 @@ dig_pain %>%
 ```
 
 
-### Gold Standard Joint Pain - Reported Upper Body Pain to Total Rotation
-```{r, echo = FALSE, fig.width = 8, fig.height = 5, warning = FALSE, message = FALSE}
+### e. Gold Standard Joint Pain - Reported Upper Body Pain to Total Rotation
+```{r, echo = FALSE, fig.width = 13, fig.height = 4, warning = FALSE, message = FALSE}
 metrics <- c("gs_jc_status_wrist",
              "gs_jc_status_elbow",
              "gs_jc_status_shoulder")
@@ -218,8 +273,8 @@ gs_pain %>%
 ```
 
 
-### Gold Standard Swelling - Reported Upper Body Pain to Total Rotation
-```{r, echo = FALSE, fig.width = 8, fig.height = 5, warning = FALSE, message = FALSE}
+### f. Gold Standard Swelling - Reported Upper Body Pain to Total Rotation
+```{r, echo = FALSE, fig.width = 13, fig.height = 4, warning = FALSE, message = FALSE}
 metrics <- c("gs_swell_status_wrist",
              "gs_swell_status_elbow",
              "gs_swell_status_shoulder")
