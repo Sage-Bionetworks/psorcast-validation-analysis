@@ -166,7 +166,7 @@ normalize_activity_to_cols <- function(data){
    data %>% 
         dplyr::select(-filePath) %>%
         dplyr::mutate(activityType = stringr::str_remove(fileColumnName, ".json")) %>% 
-        tidyr::pivot_wider(id_cols = c("participantId", "createdOn"), 
+        tidyr::pivot_wider(id_cols = c("recordId","participantId", "createdOn"), 
                            names_from = "activityType", 
                            names_glue = "{activityType}_{.value}",
                            values_from = matches("omega|quantile|total")) 
@@ -202,7 +202,11 @@ main <- function(){
         DJO_FTRS, 
         file_columns = FILE_COLUMNS) %>%
         dplyr::select(
-            everything(),
+            recordId,
+            participantId, 
+            createdOn, 
+            fileColumnName, 
+            filePath,
             djo_leftClockwise = leftClockwiseRotation,
             djo_leftCounter = leftCounterRotation,
             djo_rightClockwise = rightClockwiseRotation,
@@ -213,22 +217,29 @@ main <- function(){
     #' total rotation features
     #' and inner join based on participantId and createdOn
     #' using reduce opreation -> join with ppacman to get 
-    #' visit ref
+    #' visit references for each records
     djo_features <- list(
         sensor_features = djo_table %>%
-            dplyr::select(participantId, createdOn, fileColumnName, filePath) %>%
             dplyr::mutate(features = purrr::map(
                 filePath, get_sensor_features)) %>%
             tidyr::unnest(features) %>%
             normalize_activity_to_cols(),
         rotation_features = djo_table %>% 
-            dplyr::group_by(participantId, createdOn) %>%
+            dplyr::group_by(recordId, participantId, createdOn) %>%
             dplyr::summarise_all(last) %>%
             get_rotation_ratios() %>%
-            get_total_rotation()) %>% 
-        purrr::reduce(dplyr::full_join, by = c("participantId", "createdOn")) %>%
+            get_total_rotation() %>%
+            dplyr::ungroup()) %>% 
+        purrr::reduce(dplyr::full_join, 
+                      by = c("recordId", "participantId", "createdOn")) %>%
         join_with_ppacman(visit_ref, ppacman) %>%
-        select(participantId, visit_num, everything())
+        select(
+            recordId,
+            participantId, 
+            visit_num, 
+            createdOn, 
+            everything(),
+            -filePath)
         
     #' get removed features if any
     removed_rows <- djo_table %>% 
