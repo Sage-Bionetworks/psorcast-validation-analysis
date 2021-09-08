@@ -41,7 +41,7 @@ GIT_URL <- githubr::getPermlink(
     repository = githubr::getRepo(
         repository = GIT_REPO, 
         ref="branch", 
-        refName='model'), 
+        refName='main'), 
     repositoryPath = SCRIPT_PATH)
 
 

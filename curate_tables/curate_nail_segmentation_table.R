@@ -29,7 +29,7 @@ GIT_URL <- getPermlink(
     repository = getRepo(
         repository = GIT_REPO, 
         ref="branch", 
-        refName='model'), 
+        refName='main'), 
     repositoryPath = SCRIPT_PATH)
 
 #' function to create nail annotation table column object
