@@ -8,6 +8,7 @@
 library(synapser)
 library(data.table)
 library(dplyr)
+library(githubr)
 
 synapser::synLogin()
 
@@ -16,6 +17,20 @@ HAND_IMAGING_TBL_ID <- "syn26050060"
 ANNOTATION <- "syn26148075"
 TABLE_NAME <- "HandImaging - FingerSegmentation (Curated)"
 PARENT_ID <- "syn22276946"
+
+#' get git reference
+GIT_TOKEN_PATH <- config::get("git")$token_path
+GIT_REPO <- config::get("git")$repo
+SCRIPT_PATH <- file.path('curate_tables',
+                         'curate_nail_segmentation_table.R')
+setGithubToken(
+    readLines(GIT_TOKEN_PATH))
+GIT_URL <- getPermlink(
+    repository = getRepo(
+        repository = GIT_REPO, 
+        ref="branch", 
+        refName='model'), 
+    repositoryPath = SCRIPT_PATH)
 
 #' function to create nail annotation table column object
 create_columns <- function(){
@@ -55,6 +70,7 @@ schema <- Schema(name = TABLE_NAME,
                  columns = create_columns(),
                  parent = PARENT_ID)
 table <- Table(schema, table)
-activity <- Activity(used = HAND_IMAGING_TBL_ID)
+activity <- Activity(used = HAND_IMAGING_TBL_ID,
+                     executed = GIT_URL)
 table <- synStore(table)
 
