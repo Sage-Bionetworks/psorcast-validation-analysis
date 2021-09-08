@@ -73,4 +73,6 @@ table <- Table(schema, table)
 activity <- Activity(used = HAND_IMAGING_TBL_ID,
                      executed = GIT_URL)
 table <- synStore(table)
+synapser::synSetProvenance(table$tableId, activity = activity)
+
 
