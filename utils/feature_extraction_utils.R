@@ -7,7 +7,14 @@
 #' @param ppacman_tbl ppacman assessor table id
 #' 
 #' @return data with joined ppacman assessor
-join_with_ppacman <- function(data, visit_ref_tbl, ppacman_tbl){
+join_with_ppacman <- function(data, 
+                              visit_ref_tbl, 
+                              ppacman_tbl, 
+                              join_keys = NULL){
+    if(is.null(join_keys)){
+        join_keys <- c("participantId")
+    }
+    
     #' only visiting once
     single_visit_user <- visit_ref_tbl %>% 
         dplyr::filter(!has_multiple_visit) %>%
@@ -21,16 +28,26 @@ join_with_ppacman <- function(data, visit_ref_tbl, ppacman_tbl){
     #' join multiple visits and single-visits based on precondition
     visit_data <- list(
         single_visit = data %>% 
-            dplyr::filter(participantId %in% single_visit_user) %>%
-            dplyr::inner_join(ppacman_tbl, by = c("participantId")) %>%
-            dplyr::mutate(createdOn = createdOn.y),
+            dplyr::filter(
+                participantId %in% single_visit_user) %>%
+            dplyr::inner_join(
+                ppacman_tbl, 
+                by = join_keys) %>%
+            dplyr::mutate(
+                createdOn = createdOn.y),
         multiple_visit = data %>% 
-            dplyr::filter(participantId %in% multiple_visit_user) %>%
-            dplyr::full_join(visit_ref_tbl, by = c("participantId")) %>%
-            dplyr::filter(createdOn >= min_createdOn & 
-                              createdOn <= max_createdOn) %>%
-            dplyr::inner_join(ppacman_tbl, by = c("participantId", "visit_num")) %>%
-            dplyr::mutate(createdOn = min_createdOn)) %>% 
+            dplyr::filter(
+                participantId %in% multiple_visit_user) %>%
+            dplyr::full_join(
+                visit_ref_tbl, by = "participantId") %>%
+            dplyr::filter(
+                createdOn >= min_createdOn & 
+                    createdOn <= max_createdOn) %>%
+            dplyr::inner_join(
+                ppacman_tbl, 
+                by = c(join_keys, "visit_num")) %>%
+            dplyr::mutate(
+                createdOn = min_createdOn)) %>% 
         bind_rows() %>%
         dplyr::select(-createdOn.y, 
                       -createdOn.x, 
