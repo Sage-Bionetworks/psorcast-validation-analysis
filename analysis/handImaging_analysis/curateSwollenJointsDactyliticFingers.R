@@ -37,7 +37,7 @@ GIT_URL <- getPermlink(
     repository = getRepo(
         repository = GIT_REPO, 
         ref="branch", 
-        refName='master'), 
+        refName='main'), 
     repositoryPath = SCRIPT_PATH)
 
 #' get visit reference and curated ppacman table
