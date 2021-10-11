@@ -12,8 +12,16 @@ library(ROCit)
 synapser::synLogin()
 
 #' get Elias Synapse ID
-COMBINED_UPPER_PAIN <- "syn26163179"
-UPPER_JOINT_PAIN <- "syn26163180"
+REF_LIST <- list(
+    djo = list(
+        combined_upper_pain = "syn26163179",
+        upper_joint_pain = "syn26163180",
+        output = "DjO_model_roc_auc_data.tsv",
+        output_iter = "DjO_model_boxplot_data.tsv"
+    )
+)
+
+PARENT_ID <- "syn25704998"
 
 
 get_med_auc_info <- function(data){
@@ -44,19 +52,49 @@ visualize_roc_auc <- function(data){
         geom_point()
 }
 
+visualize_group_boxplot <- function(data){
+    data %>%
+        ggplot(aes(x = subgroup, 
+                   y = auc_score, 
+                   fill = subgroup)) +
+        geom_boxplot(alpha = 0.6) +
+        geom_hline(yintercept = 0.5, 
+                   linetype = "twodash", 
+                   color = "red",
+                   show.legend = TRUE) +
+        theme_minimal() +
+        theme(axis.text.x = element_blank())
+}
+
 
 #' get combined upper pain
-load(synapser::synGet(COMBINED_UPPER_PAIN)$path)
+load(synapser::synGet(
+    REF_LIST$djo$combined_upper_pain)$path)
 combined_upper_pain_adjusted_outputs <- adjusted.outputs
 combined_upper_pain_aucs <- AUCs %>%
-    tibble::as_tibble()
+    tibble::as_tibble() %>%
+    dplyr::mutate(group = "Upper Joint Pain + Enthesitis")
 
 #' get upper joint pain
-load(synapser::synGet(UPPER_JOINT_PAIN)$path)
+load(synapser::synGet(
+    REF_LIST$djo$upper_joint_pain)$path)
 upper_pain_adjusted_outputs <- adjusted.outputs
 upper_pain_aucs <- AUCs %>%
-    tibble::as_tibble()
+    tibble::as_tibble() %>%
+    dplyr::mutate(group = "Upper Joint Pain")
 
+    
+# get boxplot
+auc_iter <- combined_upper_pain_aucs %>%
+    dplyr::bind_rows(upper_pain_aucs) %>%
+    tidyr::pivot_longer(cols = c("adjusted", "shuffled", "original"),
+                        values_to = "auc_score") %>%
+    dplyr::mutate(subgroup = paste(group,name))
+
+auc_iter_plot <- auc_iter %>%
+    visualize_group_boxplot() +
+    labs(title = "AUC scores on 1k Random-Forest Iterations",
+         subtitle = "Comparison AUC scores on different subgroups")
 
 row_loc <- list(
     combined = combined_upper_pain_aucs %>% 
@@ -97,7 +135,7 @@ result <- dplyr::bind_rows(
     combined_data,
     random_data)
 
-auc_plots <- result %>%
+roc_auc_plots <- result %>%
     visualize_roc_auc() +
     scale_color_manual(
         name="Group",
@@ -113,4 +151,24 @@ auc_plots <- result %>%
     labs(
         title= "Digital Jar Opener ROC-AUC Curves",
         subtitle = "Modeling based on upper-pain outcome variables")
+
+plot <- wrap_plots(auc_iter_plot, roc_auc_plots, nrow = 2, ncol = 1)
     
+result %>%
+    readr::write_tsv(REF_LIST$djo$output)
+file = synapser::File(REF_LIST$djo$output, 
+                      parent = PARENT_ID)
+activity = synapser::Activity(
+    used = c(REF_LIST$djo$combined_upper_pain,
+             REF_LIST$djo$upper_joint_pain))
+synStore(file, activity = activity)
+
+auc_iter %>%
+    readr::write_tsv(REF_LIST$djo$output_iter)
+file = synapser::File(REF_LIST$djo$output_iter, 
+                      parent = PARENT_ID)
+activity = synapser::Activity(
+    used = c(REF_LIST$djo$combined_upper_pain,
+             REF_LIST$djo$upper_joint_pain))
+synStore(file, activity = activity) 
+
