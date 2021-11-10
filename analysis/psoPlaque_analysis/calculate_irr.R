@@ -132,7 +132,7 @@ main <- function(){
         # mutate each nested data
         dplyr::mutate(kappa_score = purrr::map(data, kappa_relative_to_gs)) %>%
         tidyr::unnest(kappa_score) %>% 
-        dplyr::mutate(kappa_value = sprintf("%.2f", kappa_value)) %>%
+        dplyr::mutate(kappa_value = sprintf("%.4f", kappa_value)) %>%
         
         # plot kappa score using bar plot
         plot_kappa()
