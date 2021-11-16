@@ -170,15 +170,19 @@ main <- function(){
         dplyr::mutate(
             combined_upper_pain = as.logical(upper_enthesis) | 
                 as.logical(upper_body_pain)) %>%
-        dplyr::select(participantId, 
-                      visit_num, 
-                      age,
-                      sex,
-                      diagnosis,
-                      upper_enthesis,
-                      upper_body_pain, 
-                      combined_upper_pain,
-                      matches("djo|total_rotation")) %>%
+        dplyr::group_by(participantId, 
+                        visit_num,
+                        age,
+                        sex,
+                        diagnosis,
+                        upper_enthesis,
+                        upper_body_pain, 
+                        combined_upper_pain) %>%
+        dplyr::select(
+            matches(
+                "^rightCounter|^leftCounter|^rightClockwise|^leftClockwise|^djo|^total_rotation")) %>%
+        dplyr::ungroup() %>%
+        tidyr::drop_na() %>%
         readr::write_tsv(OUTPUT_FILENAME$djo)
     
     #' Get walk30secs features 
@@ -195,6 +199,7 @@ main <- function(){
                       lower_body_pain, 
                       combined_lower_pain,
                       matches("^x_|^y_|^z_|^AA_")) %>%
+        tidyr::drop_na() %>%
         readr::write_tsv(OUTPUT_FILENAME$walk)
     
     #' Create activity object
