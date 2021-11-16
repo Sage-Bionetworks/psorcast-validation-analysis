@@ -202,3 +202,16 @@ log_removed_data <- function(all_data, subset_data){
             "removed from ppacman joining", 
             error))
 }
+
+
+get_github_url <- function(git_token_path, 
+                           git_repo,
+                           script_path,
+                           ...){
+    setGithubToken(readLines(git_token_path))
+    githubr::getPermlink(
+        git_repo, 
+        repositoryPath = script_path,
+        ...)
+}
+

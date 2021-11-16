@@ -2,6 +2,8 @@ library(tidyverse)
 library(data.table)
 library(synapser)
 library(bridgeclient)
+library(githubr)
+source("utils/feature_extraction_utils.R")
 
 synapser::synLogin()
 bridgeclient::bridge_login(
@@ -12,6 +14,7 @@ MONTH <- lubridate::month(lubridate::now())
 TABLE_ID <- "syn26445447"
 PARENT_ID <- "syn26438179"
 OUTPUT_FILE <- "healthcode_metadata_mapping_from_bridge.tsv"
+SCRIPT_PATH <- "analysis/adherence_analysis/get_email_from_bridge.R"
 
 
 #' Helper functiton to get info mapping from Bridge
@@ -46,6 +49,12 @@ filter_based_on_month <- function(data, month){
 }
 
 main <- function(){
+    git_url <- get_github_url(
+        git_token_path = config::get("git")$token_path,
+        git_repo = config::get("git")$repo,
+        script_path = SCRIPT_PATH
+    )
+    
     tbl_entity <- synTableQuery(glue::glue("SELECT * FROM {TABLE_ID}"))
     data <- tbl_entity$asDataFrame() %>%
         tibble::as_tibble() %>%
@@ -54,7 +63,10 @@ main <- function(){
         get_info_mapping_bridge() %>%
         save_to_synapse(output_filename = OUTPUT_FILE,
                         parent = PARENT_ID,
+                        executed = git_url,
                         description = "extract info from Bridge",
                         used = TABLE_ID)
 }
+
+main()
     
