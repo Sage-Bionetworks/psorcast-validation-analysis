@@ -85,7 +85,8 @@ main <- function(){
                       djo_rightClockwise = rightClockwiseRotation,
                       djo_rightCounter = rightCounterRotation) %>% 
         dplyr::group_by(participantId, visit_num) %>%
-        dplyr::summarise_all(last)
+        dplyr::summarise_all(last) %>%
+        dplyr::arrange(desc(createdOn))
     
     #' get error logging for removed records
     error_log <- log_removed_data(all.digitalJarOpen.ftrs %>%

@@ -3,25 +3,35 @@
 #' and multiple-visit participant by their visit reference
 #' 
 #' @param data dataframe/tibble of participantId, createdOn, ... 
-#' @param visit_ref_tbl visit reference table id
-#' @param ppacman_tbl ppacman assessor table id
+#' @param visit_ref visit reference table id
+#' @param ppacman ppacman assessor table id
 #' 
 #' @return data with joined ppacman assessor
 join_with_ppacman <- function(data, 
-                              visit_ref_tbl, 
-                              ppacman_tbl, 
-                              join_keys = NULL){
+                              visit_ref, 
+                              ppacman, 
+                              join_keys = NULL,
+                              visit_offset = lubridate::ddays(7)){
+    visit_ref <- visit_ref %>%
+        dplyr::mutate(participantId = tolower(participantId)) 
+    ppacman <- ppacman %>%
+        dplyr::mutate(participantId = tolower(participantId)) %>% 
+        dplyr::mutate(createdOn = lubridate::as_datetime(createdOn))
+    data <- data %>%
+        dplyr::mutate(participantId = tolower(participantId)) %>% 
+        dplyr::mutate(createdOn = lubridate::as_datetime(createdOn))
+    
     if(is.null(join_keys)){
         join_keys <- c("participantId")
     }
     
     #' only visiting once
-    single_visit_user <- visit_ref_tbl %>% 
+    single_visit_user <- visit_ref %>% 
         dplyr::filter(!has_multiple_visit) %>%
         .$participantId %>% unique()
     
     #' visit multiple times
-    multiple_visit_user <- visit_ref_tbl %>% 
+    multiple_visit_user <- visit_ref %>% 
         dplyr::filter(has_multiple_visit) %>%
         .$participantId %>% unique()
     
@@ -31,7 +41,7 @@ join_with_ppacman <- function(data,
             dplyr::filter(
                 participantId %in% single_visit_user) %>%
             dplyr::inner_join(
-                ppacman_tbl, 
+                ppacman, 
                 by = join_keys) %>%
             dplyr::mutate(
                 createdOn = createdOn.y),
@@ -39,12 +49,12 @@ join_with_ppacman <- function(data,
             dplyr::filter(
                 participantId %in% multiple_visit_user) %>%
             dplyr::full_join(
-                visit_ref_tbl, by = "participantId") %>%
+                visit_ref, by = "participantId") %>%
             dplyr::filter(
-                createdOn >= min_createdOn & 
-                    createdOn <= max_createdOn) %>%
+                createdOn >= (min_createdOn - visit_offset)  & 
+                    createdOn <= (max_createdOn + visit_offset)) %>%
             dplyr::inner_join(
-                ppacman_tbl, 
+                ppacman, 
                 by = c(join_keys, "visit_num")) %>%
             dplyr::mutate(
                 createdOn = min_createdOn)) %>% 

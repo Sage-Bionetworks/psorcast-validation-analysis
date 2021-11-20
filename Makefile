@@ -40,7 +40,8 @@ features:
 	Rscript $(FEATURE_EXTRACTION_PATH)/psorcast_merged_features.R || exit 1
 
 manuscript:
-	Rscript $(ANALYSIS_PATH)/jointCounts_analysis/gs_vs_dig_jc_comparison.R || exit 1
+	Rscript $(ANALYSIS_PATH)/manuscript_curation/gs_vs_dig_jc_comparison.R || exit 1
+	Rscript $(ANALYSIS_PATH)/manuscript_curation/get_curated_features.R || exit 1
 
 misc:
 	Rscript $(ANALYSIS_PATH)/handImaging_analysis/curateSwollenJointsDactyliticFingers.R || exit 1
