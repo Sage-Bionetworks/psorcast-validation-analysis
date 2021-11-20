@@ -170,9 +170,7 @@ main <- function(){
                                          "error: empty list in summary.json",
                                          NA_character_)) %>%
             dplyr::filter(is.na(error)) %>% 
-            join_with_ppacman(
-                visit_ref_tbl = visit_ref,
-                ppacman_tbl = ppacman) %>%
+            join_with_ppacman(visit_ref, ppacman) %>%
             dplyr::select(recordId, 
                           participantId, 
                           createdOn, 
