@@ -83,19 +83,6 @@ get_ppacman_assessor <- function(){
         dplyr::ungroup()
 }
 
-join_with_ppacman <- function(annotations_data, 
-                              ppacman_data,
-                              visit_ref_data){
-    annotations_data %>% 
-        dplyr::left_join(visit_ref_data, 
-                         by = c("participantId")) %>%
-        dplyr::filter(createdOn >= min_createdOn, 
-                      createdOn <= max_createdOn) %>%
-        dplyr::select(-ends_with("createdOn")) %>%
-        dplyr::inner_join(ppacman_data, by = c("participantId", "visit_num"))
-}
-
-
 annotations_to_wide_format <- function(synId){
     synapser::synGetAnnotations(synId) %>% 
         tibble::enframe(.) %>% 

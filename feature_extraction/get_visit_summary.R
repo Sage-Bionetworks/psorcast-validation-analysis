@@ -92,7 +92,8 @@ get_psorcast_tables <- function(tbl_id){
     tbl_data %>%
         dplyr::mutate(
             source = tbl_name,
-            id = tbl_id) %>% 
+            id = tbl_id,
+            participantId = tolower(participantId)) %>% 
         dplyr::select(
             any_of(c(
                 "recordId",

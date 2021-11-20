@@ -83,8 +83,7 @@ main <- function(){
     ppacman <- synGet(PPACMAN_TBL_ID)$path %>% fread()
     result <- get_gs_joint_summaries() %>%
         flatten_joint_summary() %>%
-        join_with_ppacman(visit_ref_tbl = visit_ref, 
-                          ppacman_tbl = ppacman) %>%
+        join_with_ppacman(visit_ref, ppacman) %>%
         dplyr::filter(diagnosis == "PsA") %>%
         summarize_joint_by_average() %>% 
         readr::write_tsv(OUTPUT_FILE)

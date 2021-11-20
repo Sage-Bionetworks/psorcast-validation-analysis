@@ -110,8 +110,7 @@ main <- function(){
     ppacman <- synGet(PPACMAN_TBL_ID)$path %>% fread()
     result <- get_joint_summary() %>%
         flatten_joint_summary() %>%
-        join_with_ppacman(visit_ref_tbl = visit_ref, 
-                          ppacman_tbl = ppacman)  %>%
+        join_with_ppacman(visit_ref, ppacman)  %>%
         annotate_jcounts_comparison() %>%
         dplyr::arrange(desc(createdOn)) %>%
         dplyr::mutate(createdOn = as.character(createdOn)) %>% 
