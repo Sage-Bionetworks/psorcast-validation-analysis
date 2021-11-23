@@ -26,19 +26,23 @@ synLogin()
 MERGED_FEATURES <- "syn25832975"
 ```
 
-```{r echo = FALSE}
+```{r include = FALSE}
 data <-  fread(synGet(MERGED_FEATURES)$path)
 
 ppacman <-  synTableQuery("SELECT *  FROM syn25006883")$asDataFrame() %>% 
+    tibble::as_tibble() %>%
     dplyr::select(participantId, 
                   visit_num = `Visit Number`, 
                   ent_loc =`Enthesitis Label`) %>%
     dplyr::mutate(has_upper_enthesitis = ifelse(
         str_detect(ent_loc, "arm"), TRUE, FALSE)) %>%
-    dplyr::select(participantId, visit_num, has_upper_enthesitis)
+    dplyr::mutate(has_upper_enthesitis = ifelse(
+        is.na(has_upper_enthesitis), FALSE, has_upper_enthesitis)) %>%
+    dplyr::select(participantId, visit_num, has_upper_enthesitis) %>% 
+    dplyr::mutate(participantId = tolower(participantId))
 
 data <- data %>%
-    dplyr::left_join(ppacman, by = c("participantId", "visit_num"))
+    dplyr::inner_join(ppacman, by = c("participantId", "visit_num"))
 
 ```
 

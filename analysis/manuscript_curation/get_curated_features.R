@@ -70,7 +70,8 @@ get_ppacman <- function(){
                       ent_loc =`Enthesitis Label`) %>%
         dplyr::mutate(
             has_lower_enthesitis = ifelse(str_detect(ent_loc, "knee|achilles"), 1, 0),
-            has_upper_enthesitis = ifelse(str_detect(ent_loc, "arm"), 1, 0))
+            has_upper_enthesitis = ifelse(str_detect(ent_loc, "arm"), 1, 0)) %>% 
+        dplyr::mutate(participantId = tolower(participantId))
 }
 
 #' Function to retrieve rotation data
