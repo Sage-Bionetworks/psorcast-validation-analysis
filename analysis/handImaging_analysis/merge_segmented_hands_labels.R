@@ -13,11 +13,17 @@ source("utils/feature_extraction_utils.R")
 synapser::synLogin()
 
 # Global Variables
-FOLDER_OUTPUT <- "analysis/handImaging_analysis"
+SCRIPT_PATH <- "analysis/handImaging_analysis/merge_segmented_hands_labels.R"
+OUTPUT_FILE <- "segmented_fingers_metadata_mapping.tsv"
 VISIT_REF_ID <- "syn25825626"
 PPACMAN_ID <- "syn22337133"
 ANNOTATION <- "syn26251785"
 TABLE_ID <- "syn26050060"
+GIT_URL <- get_github_url(
+    config::get("git")$token_path,
+    config::get("git")$repo, 
+    script_path = SCRIPT_PATH 
+)
 
 #' Function to reshape finger location 
 #' in PPACMAN data to be tidy format
@@ -115,3 +121,6 @@ result <- entity$asDataFrame() %>%
 
 result %>% 
     readr::write_tsv("segmented_fingers_metadata_mapping.tsv")
+
+
+
