@@ -20,9 +20,9 @@ PPACMAN_ID <- "syn22337133"
 ANNOTATION <- "syn26251785"
 TABLE_ID <- "syn26050060"
 GIT_URL <- get_github_url(
-    config::get("git")$token_path,
-    config::get("git")$repo, 
-    script_path = SCRIPT_PATH 
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo, 
+    script_path = SCRIPT_PATH
 )
 
 #' Function to reshape finger location 
