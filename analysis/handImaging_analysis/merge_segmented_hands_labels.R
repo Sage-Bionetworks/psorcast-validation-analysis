@@ -17,12 +17,15 @@ SCRIPT_PATH <- "analysis/handImaging_analysis/merge_segmented_hands_labels.R"
 OUTPUT_FILE <- "segmented_fingers_metadata_mapping.tsv"
 VISIT_REF_ID <- "syn25825626"
 PPACMAN_ID <- "syn22337133"
-ANNOTATION <- "syn26251785"
 TABLE_ID <- "syn26050060"
+PARENT_ID <- "syn22342373"
+
 GIT_URL <- get_github_url(
     git_token_path = config::get("git")$token_path,
     git_repo = config::get("git")$repo, 
-    script_path = SCRIPT_PATH
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main'
 )
 
 #' Function to reshape finger location 
@@ -120,7 +123,13 @@ result <- entity$asDataFrame() %>%
     dplyr::select(recordId, createdOn, everything())
 
 result %>% 
-    readr::write_tsv("segmented_fingers_metadata_mapping.tsv")
+    readr::write_tsv(OUTPUT_FILE)
+
+activity <- Activity(used = c(TABLE_ID, PPACMAN_ID, VISIT_REF_ID),
+                     executed = GIT_URL)
+file <- synapser::File(OUTPUT_FILE, parent = PARENT_ID)
+synStore(file, activity = activity)
+unlink(OUTPUT_FILE)
 
 
 
