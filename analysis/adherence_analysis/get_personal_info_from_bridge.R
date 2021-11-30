@@ -93,6 +93,7 @@ main <- function(){
             executed = git_url,
             description = "extract info from Bridge",
                         used = TABLE_ID)
+    unlink(OUTPUT_FILE)
 }
 
 main()
