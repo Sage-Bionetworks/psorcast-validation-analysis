@@ -17,7 +17,7 @@ SCRIPT_PATH <- "analysis/handImaging_analysis/merge_segmented_hands_labels.R"
 OUTPUT_FILE <- "segmented_fingers_metadata_mapping.tsv"
 VISIT_REF_ID <- "syn25825626"
 PPACMAN_ID <- "syn22337133"
-TABLE_ID <- "syn26050060"
+TABLE_ID <- "syn26479618"
 PARENT_ID <- "syn22342373"
 
 GIT_URL <- get_github_url(

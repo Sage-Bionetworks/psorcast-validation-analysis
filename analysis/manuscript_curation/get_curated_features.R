@@ -8,7 +8,6 @@
 #' 
 #' Maintainer: aryton.tediarjo@sagebase.org
 ########################################################
-
 library(synapser)
 library(tidyverse)
 library(data.table)
@@ -158,12 +157,14 @@ main <- function(){
     merged_features <- fread(
         synapser::synGet(MERGED_FEATURES)$path,
         quote = "") %>%
-        dplyr::left_join(
+        dplyr::inner_join(
             get_ppacman(), 
             by = c("participantId", "visit_num")) %>%
         get_upper_body_pain() %>%
         get_lower_body_pain() %>%
-        annotate_classes()
+        annotate_classes() %>% 
+        dplyr::group_by(participantId, visit_num) %>%
+        dplyr::summarise_all(last)
     
     #' Get DjO features 
     djo_features <- merged_features %>% 
