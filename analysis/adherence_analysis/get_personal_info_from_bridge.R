@@ -19,17 +19,17 @@ bridgeclient::bridge_login(
 YEAR <- lubridate::year(lubridate::now())
 MONTH <- lubridate::month(lubridate::now())
 MONTH_NAME <- month.name[MONTH]
-OUTPUT_FILE <- glue::glue("Psorcast_National_Launch",
+OUTPUT_FILE <- glue::glue("psorcast_",
                           YEAR, 
                           "_", 
                           MONTH_NAME, 
-                          "_", "
-                          incentives_info.tsv")
+                          "_", 
+                          "incentives_participants.tsv")
 ACTIVITY_THRESHOLD <- 3
 
 TABLE_ID <- "syn26445447"
 PARENT_ID <- "syn26438179"
-SCRIPT_PATH <- "analysis/adherence_analysis/get_email_from_bridge.R"
+SCRIPT_PATH <- "analysis/adherence_analysis/get_personal_info_from_bridge.R"
 
 
 #' Helper functiton to get info mapping from Bridge

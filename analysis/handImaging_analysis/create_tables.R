@@ -98,12 +98,12 @@ check_for_files <- function(data,
     
     # update table rows if new files exist
     if(nrow(filehandleid_mapping) > 0){
-        data <- data %>%
+        newData <- data %>%
             dplyr::select(-!!sym(target_col)) %>%
-            dplyr::inner_join(filehandleid_mapping) %>% 
-            dplyr::select(-name, -path)
+            dplyr::inner_join(filehandleid_mapping, by = c("name")) %>% 
+            dplyr::select(-name)
     }else{
-        data <- data %>% 
+        newData <- data %>% 
             dplyr::mutate(!!sym(target_col) := NA_character_) %>%
             dplyr::select(-name, -path)
     }
@@ -120,7 +120,7 @@ annotated_images <- get_folder_contents(FOLDER_ANNOTATED) %>%
                   participantId)
 
 image_mapping <- synapserutils::syncFromSynapse(
-    synGet(FOLDER_LIST$segmented_nails)) %>% 
+    synGet(REF$segmented_nails$folder_id)) %>% 
     purrr::map_dfr(function(x){
         tibble(name = x$properties$name,
                path = x$path)})  %>%
@@ -145,16 +145,11 @@ table_map <- table %>%
         join_keys = c("recordId", "finger_key"))
 
 table_map <- check_for_files(
-    table_map$newData,
-    table_map$table_id,
-    PROJECT_ID,
-    "finger_segments")
+    data = table_map$newData,
+    table_id = table_map$table_id,
+    project_id = PROJECT_ID,
+    target_col = "finger_segments")
 
-
-
-
-
-
-
-
-newTable <- synStore(Table(table_id, newData))
+newTable <- synStore(Table(
+    table_map$table_id, 
+    table_map$newData))
