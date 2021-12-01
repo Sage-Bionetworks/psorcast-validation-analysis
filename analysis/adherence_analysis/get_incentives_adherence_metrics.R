@@ -136,6 +136,7 @@ main <- function(){
     #' Save results
     result %>% 
         dplyr::inner_join(mapping, by = c("healthCode")) %>% 
+        dplyr::select(-last_weekInStudy) %>%
         save_to_synapse(
             output_filename = OUTPUT_FILE,
             parent = PARENT_ID,

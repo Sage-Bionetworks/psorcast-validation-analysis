@@ -15,6 +15,7 @@ synapser::synLogin()
 TABLE_NAME <- "PsorcastAdherence"
 PROJECT_ID <- "syn22276946"
 DESCRIPTION <- "Measure adherence from psorcast project"
+SCRIPT_PATH <- "analysis/adherence_analysis/get_activity_adherence_table.R"
 
 TABLE_LIST <- list(
     "PsoriasisDraw-v4" = "syn26428811",
@@ -138,6 +139,15 @@ update_synapse_table <- function(data, table_name, project_id, join_keys){
 }
 
 main <- function(){
+    #' get github token
+    git_url <- get_github_url(
+        git_token_path = config::get("git")$token_path,
+        git_repo = config::get("git")$repo,
+        script_path = SCRIPT_PATH,
+        ref="branch", 
+        refName='main'
+    )
+    
     #' get all activity tables (row-binded)
     data <- get_activity_tables() %>% 
         parse_study_state() %>%
@@ -154,6 +164,11 @@ main <- function(){
     newTable <- synStore(Table(
         table_map$table_id, 
         table_map$newData))
+    
+    #' set provenance
+    activity = Activity(used = TABLE_LIST %>% unname() %>% unlist(),
+                        executed = git_url)
+    synSetProvenance(table_map$table_id, activity = activity)
 }
 
 main()
