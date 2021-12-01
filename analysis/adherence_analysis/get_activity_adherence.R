@@ -1,3 +1,10 @@
+########################################
+#' Code to retrieve activity adherence
+#' by mapping each activity into columns
+#' and respective createdOn
+#' 
+#' @maintainer: aryton.tediarjo@sagebase.org
+##########################################
 library(synapser)
 library(tidyverse)
 library(data.table)
@@ -5,9 +12,8 @@ source("utils/feature_extraction_utils.R")
 
 synapser::synLogin()
 
-PROJECT_ID <- "syn21586352"
-PARENT <- "syn22276946"
-OUTPUT_FILENAME <- "psorcast_launch_activity_adherence.tsv"
+TABLE_NAME <- "PsorcastAdherence-v1"
+PROJECT_ID <- "syn22276946"
 DESCRIPTION <- "Measure adherence from psorcast project"
 
 TABLE_LIST <- list(
@@ -42,7 +48,13 @@ get_activity_tables <- function(){
         tbl_df <- get_table(tbl_id, "studyStates.json")
         tbl_df %>%
             dplyr::mutate(tableName = tbl_name) %>%
-            dplyr::select(recordId, createdOn, healthCode, filePath, tableName)
+            dplyr::filter(!stringr::str_detect(dataGroups, "test_user")) %>%
+            dplyr::select(recordId, 
+                          dataGroups,
+                          createdOn, 
+                          healthCode, 
+                          filePath, 
+                          tableName)
     })
 }
 
@@ -55,8 +67,9 @@ parse_study_state <- function(data){
         dplyr::mutate(studyStates = purrr::map(filePath, flatten_json)) %>%
         tidyr::unnest(studyStates) %>% 
         tidyr::drop_na() %>% 
+        #' handle duplicate by extracting the first occurence
         dplyr::group_by(recordId, createdOn, healthCode, tableName) %>% 
-        dplyr::summarise(weekInStudy = n_distinct(weekInStudy)) %>% 
+        dplyr::summarise(weekInStudy = first(weekInStudy)) %>% 
         dplyr::ungroup()
 }
 
@@ -76,8 +89,11 @@ pivot_activity_tbl <- function(data){
                            values_fn = max)
 }
 
-
-get_columns <- function(){
+#' Store schema object to synapse
+#' 
+#' @param table_name desired table name
+#' @param project_id project to store table in
+store_schema <- function(table_name, project_id){
     cols <- list(
         Column(name = "healthCode", columnType = "STRING", maximumSize = 50),
         Column(name = "weekInStudy", columnType = "INTEGER"),
@@ -88,17 +104,53 @@ get_columns <- function(){
         Column(name = "JointCounting-v2", columnType = "DATE"),
         Column(name = "Walk30Seconds-v2", columnType = "DATE"),
         Column(name = "DigitalJarOpen-v3", columnType = "DATE"))
-    return(cols)
+    newSchema <- synStore(Schema(name = table_name, 
+                                 columns = cols, 
+                                 parent = project_id))
+    return(newSchema$properties$id)
 }
 
-data <- get_activity_tables() %>% 
-    parse_study_state() %>%
-    pivot_activity_tbl()
+#' Update Synapse Table, by indexing new rows based on 
+#' joining keys
+#' 
+#' @param data new data to store
+#' @param table_name table name
+#' @param project_id the project id to store table in
+#' @param join_keys the join keys to index data
+#' 
+#' @return a list of new data, table_id
+update_synapse_table <- function(data, table_name, project_id, join_keys){
+    table_id <- synFindEntityId(table_name, project_id)
+    if(!is.null(table_id)){
+        synapse_tbl <- synTableQuery(
+            glue::glue("SELECT * FROM {table_id}"))$asDataFrame() %>% 
+            dplyr::select(-matches("ROW"))
+        data <- data %>% 
+            dplyr::anti_join(synapse_tbl, by = join_keys)
+    }else{
+        table_id <- store_schema(table_name, project_id)
+    }
+    
+    return(list(newData = data, table_id = table_id))
+}
 
-schema <- Schema(name = "PsorcastAdherence-v1", 
-                 columns = get_columns(), 
-                 parent = PARENT)
-table <- Table(schema, data)
-table <- synStore(table)
+main <- function(){
+    #' get all activity tables (row-binded)
+    data <- get_activity_tables() %>% 
+        parse_study_state() %>%
+        pivot_activity_tbl()
+    
+    #' get table mapping to get new rows
+    table_map <- update_synapse_table(
+        data, 
+        TABLE_NAME, 
+        PROJECT_ID, 
+        join_keys = c("healthCode", "weekInStudy"))
+    
+    #' store table to synapse
+    newTable <- synStore(Table(
+        table_map$table_id, 
+        table_map$newData))
+}
 
-
+main()

@@ -87,7 +87,7 @@ map_finger_loc <- function(data){
 
 # retrieve table from Synapse
 entity <- synTableQuery(
-    "select * from syn26159187")
+    "select * from syn26050060")
 files <- synDownloadTableColumns(
     entity, "finger_segments") %>% 
     enframe(.) %>%
@@ -112,11 +112,33 @@ ppacman <- synGet(PPACMAN_ID)$path %>%
 
 
 # get annotations data
-annot_data <- get_annotations_data(ANNOTATORS_MAPPING)
+# annot_data <- get_annotations_data(ANNOTATORS_MAPPING)
+
+# merge everything to table
+result <- entity$asDataFrame() %>%
+    dplyr::select(
+        recordId,
+        createdOn, 
+        participantId, 
+        finger_key,
+        finger_segments) %>%
+    dplyr::mutate(participantId = tolower(participantId)) %>%
+    dplyr::inner_join(files, on = "finger_segments") %>%
+    map_finger_loc() %>%
+    tibble::as_tibble() %>%
+    dplyr::select(recordId, 
+                  participantId, 
+                  createdOn,
+                  finger_key, 
+                  file_path) %>%
+    join_with_ppacman(visit_ref, 
+                      ppacman,  
+                      join_keys = c("participantId", "finger_key"))
 
 # join annotations data with ppacman to get
 # visit number reference and in-clinic info
-result <- join_with_ppacman(annot_data, visit_ref, 
+result <- join_with_ppacman(result, 
+                            visit_ref, 
                             ppacman,  
                             join_keys = c("participantId", "finger_key"))
 
@@ -133,19 +155,8 @@ result <- result %>%
     dplyr::mutate(gs_pso = as.character(ifelse(gs_pso == 1, TRUE, FALSE))) %>%
     tibble::as_tibble()
 
-# merge everything to table
-result <- entity$asDataFrame() %>%
-    dplyr::select(
-        recordId,
-        createdOn, 
-        participantId, 
-        finger_key,
-        finger_segments) %>%
-    dplyr::inner_join(files, on = "finger_segments") %>%
-    map_finger_loc() %>%
-    tibble::as_tibble() %>%
-    dplyr::select(recordId, finger_key, file_path) %>%
-    dplyr::inner_join(result, by = c("recordId", "finger_key")) %>%
+ %>%
+    dplyr::inner_join(ppacman, by = c("recordId", "finger_key")) %>%
     dplyr::select(recordId,
                   createdOn,
                   finger_key, 

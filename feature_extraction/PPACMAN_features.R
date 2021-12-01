@@ -60,7 +60,8 @@ main <- function(){
                       enthesitis = `Enthesitis Notes`,
                       gs_bsa = `Overall BSA (%)`) %>%
         dplyr::mutate(tjc_backup = stringr::str_replace_all(tjc_backup, "[\r\n]|:" , ""),
-                      sjc_backup = stringr::str_replace_all(sjc_backup, "[\r\n]|:" , ""))
+                      sjc_backup = stringr::str_replace_all(sjc_backup, "[\r\n]|:" , ""),
+                      participantId = tolower(participantId))
     
     #' write to synapse
     save_to_synapse(data = ppacman.ftrs,

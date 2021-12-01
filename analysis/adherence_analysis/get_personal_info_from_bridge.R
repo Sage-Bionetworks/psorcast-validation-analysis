@@ -1,3 +1,9 @@
+########################################
+#' Code to fetch emails from bridge
+#' using healthcode from Synapse Tables
+#' 
+#' @maintainer: aryton.tediarjo@sagebase.org
+##########################################
 library(tidyverse)
 library(data.table)
 library(synapser)
@@ -10,11 +16,20 @@ bridgeclient::bridge_login(
     study = "sage-psorcast",
     credentials_file = ".bridge_creds")
 
+YEAR <- lubridate::year(lubridate::now())
 MONTH <- lubridate::month(lubridate::now())
+MONTH_NAME <- month.name[MONTH]
+OUTPUT_FILE <- glue::glue("psorcast_",
+                          YEAR, 
+                          "_", 
+                          MONTH_NAME, 
+                          "_", 
+                          "incentives_participants.tsv")
+ACTIVITY_THRESHOLD <- 3
+
 TABLE_ID <- "syn26445447"
 PARENT_ID <- "syn26438179"
-OUTPUT_FILE <- "healthcode_metadata_mapping_from_bridge.tsv"
-SCRIPT_PATH <- "analysis/adherence_analysis/get_email_from_bridge.R"
+SCRIPT_PATH <- "analysis/adherence_analysis/get_personal_info_from_bridge.R"
 
 
 #' Helper functiton to get info mapping from Bridge
@@ -29,7 +44,7 @@ get_info_mapping_bridge <- function(data){
                 healthCode = fetch_data$healthCode,
                 phone = fetch_data$phone$number)
         }, error = function(e){
-            tibble::tibble(error = e$message)
+            tibble::tibble(error = e$message, healthCode = hc)
         })
     })
 }
@@ -39,33 +54,46 @@ get_info_mapping_bridge <- function(data){
 #' @param data the activity adherence data (tidy)
 #' @param month the month of when data is queried on
 #' @return filtered data
-filter_based_on_month <- function(data, month){
+filter_by_timestamps <- function(data, month, year){
     data %>%
-        pivot_longer(cols = !all_of(c("healthCode", "weekInStudy"))) %>%
-        dplyr::filter(lubridate::month(value) == month) %>%
-        pivot_wider(id_cols = all_of(c("healthCode", "weekInStudy")),
-                    names_from = name,
-                    values_from = value)
+        dplyr::filter(
+            lubridate::month(value) == month,
+            lubridate::year(value) == year)
+}
+
+
+filter_by_adherence <- function(data, threshold){
+    data %>% 
+        dplyr::group_by(healthCode) %>%
+        dplyr::summarise(n = n_distinct(weekInStudy, na.rm = T)) %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(n >= threshold)
 }
 
 main <- function(){
     git_url <- get_github_url(
         git_token_path = config::get("git")$token_path,
         git_repo = config::get("git")$repo,
-        script_path = SCRIPT_PATH
+        script_path = SCRIPT_PATH,
+        ref="branch", 
+        refName='main'
     )
-    
     tbl_entity <- synTableQuery(glue::glue("SELECT * FROM {TABLE_ID}"))
     data <- tbl_entity$asDataFrame() %>%
         tibble::as_tibble() %>%
         dplyr::select(-starts_with("ROW")) %>%
-        filter_based_on_month(month = MONTH) %>%
+        pivot_longer(cols = !all_of(c("healthCode", "weekInStudy"))) %>%
+        filter_by_timestamps(MONTH, YEAR) %>%
+        filter_by_adherence(ACTIVITY_THRESHOLD) %>% 
+        dplyr::distinct(healthCode) %>%
         get_info_mapping_bridge() %>%
-        save_to_synapse(output_filename = OUTPUT_FILE,
-                        parent = PARENT_ID,
-                        executed = git_url,
-                        description = "extract info from Bridge",
+        save_to_synapse(
+            output_filename = OUTPUT_FILE,
+            parent = PARENT_ID,
+            executed = git_url,
+            description = "extract info from Bridge",
                         used = TABLE_ID)
+    unlink(OUTPUT_FILE)
 }
 
 main()

@@ -50,7 +50,7 @@ get_feature_boxplot <- function(data, feature, metric, title, x, y){
 }
 ```
 
-```{r, echo = FALSE}
+```{r include=FALSE}
 data <-  fread(synGet(MERGED_FEATURES)$path)
 
 ppacman <-  synTableQuery("SELECT *  FROM syn25006883")$asDataFrame() %>% 
@@ -62,10 +62,11 @@ ppacman <-  synTableQuery("SELECT *  FROM syn25006883")$asDataFrame() %>%
                                                 FALSE),
                   has_upper_enthesitis = ifelse(str_detect(ent_loc, "arm"), 
                                                 TRUE, 
-                                                FALSE))
+                                                FALSE)) %>% 
+    dplyr::mutate(participantId = tolower(participantId))
 
 data <- data %>%
-    dplyr::left_join(ppacman, by = c("participantId", "visit_num"))
+    dplyr::inner_join(ppacman, by = c("participantId", "visit_num"))
 ```
 
 
