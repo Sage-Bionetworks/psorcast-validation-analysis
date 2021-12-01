@@ -41,7 +41,7 @@ OUTPUT_FILE <- glue::glue("psorcast_",
 ACTIVITY_THRESHOLD <- 3
 TABLE_ID <- "syn26486970"
 PARENT_ID <- "syn26438179"
-SCRIPT_PATH <- "analysis/adherence_analysis/get_personal_info_from_bridge.R"
+SCRIPT_PATH <- "analysis/adherence_analysis/get_incentives_adherence_metrics.R"
 
 
 #' Helper functiton to get info mapping from Bridge
