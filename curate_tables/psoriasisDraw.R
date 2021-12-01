@@ -29,7 +29,8 @@ synapser::synLogin()
 # Global Parameters
 ##############
 PARENT_SYN_ID <- 'syn22276946'
-PSORIASIS_DRAW_TBL <- 'syn20835605'
+PSORIASIS_DRAW_TBL <- list(V1 = 'syn20835605',
+                            V2 = 'syn24203300')
 OUTPUT_TBL_NAME <- 'PsoriasisDraw-Curated'
 FILE_HANDLE_COLS <- c("summaryImage.png",
                       "selectedZones.json",
@@ -93,19 +94,21 @@ main <- function(){
   #' - copy filehandles
   #' - replace participantID to participantId
   #' - regenerate table from source
-  PSORIASIS_DRAW_TBL %>% 
-    query_table() %>% 
-    dplyr::select(participantId = participantID, everything()) %>%
-    copy_file_handles(
-      tbl_id = PSORIASIS_DRAW_TBL,
-      file_handle_cols = FILE_HANDLE_COLS) %>%
+  #' 
+  purrr::map_dfr(PSORIASIS_DRAW_TBL, function(id){
+    query_table(id) %>% 
+      dplyr::select(participantId = participantID, everything()) %>%
+      copy_file_handles(
+        tbl_id = id,
+        file_handle_cols = FILE_HANDLE_COLS)})%>%
     regenerate_table(tbl_name = OUTPUT_TBL_NAME,
                      parent = PARENT_SYN_ID, 
                      keep_cols = KEEP_COLS,
                      new_cols = NEW_COLS,
                      file_handle_cols = FILE_HANDLE_COLS,
-                     src_tbl_id = c(PSORIASIS_DRAW_TBL),
-                     used = c(PSORIASIS_DRAW_TBL),
+                     src_tbl_id = c(PSORIASIS_DRAW_TBL$V2),
+                     used = c(PSORIASIS_DRAW_TBL$V1,
+                              PSORIASIS_DRAW_TBL$V2),
                      executed = GIT_URL,
                      name = "curate psoriasis draw")
 }

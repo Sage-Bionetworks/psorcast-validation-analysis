@@ -17,8 +17,14 @@ bridgeclient::bridge_login(
     credentials_file = ".bridge_creds")
 
 YEAR <- lubridate::year(lubridate::now())
-MONTH <- lubridate::month(lubridate::now())
+MONTH <- 11
 MONTH_NAME <- month.name[MONTH]
+DATE <- lubridate::ymd(glue::glue("{YEAR}-{MONTH}-01"))
+MONTH_CEILING <- lubridate::ceiling_date(DATE, unit = 'month') - 
+    lubridate::ddays(x = 1)
+
+
+
 OUTPUT_FILE <- glue::glue("psorcast_",
                           YEAR, 
                           "_", 
@@ -27,7 +33,7 @@ OUTPUT_FILE <- glue::glue("psorcast_",
                           "incentives_participants.tsv")
 ACTIVITY_THRESHOLD <- 3
 
-TABLE_ID <- "syn26445447"
+TABLE_ID <- "syn26486970"
 PARENT_ID <- "syn26438179"
 SCRIPT_PATH <- "analysis/adherence_analysis/get_personal_info_from_bridge.R"
 
@@ -49,25 +55,24 @@ get_info_mapping_bridge <- function(data){
     })
 }
 
-#' Filter based on month using pivot as 
-#' it automatically ignores the NA
-#' @param data the activity adherence data (tidy)
-#' @param month the month of when data is queried on
-#' @return filtered data
-filter_by_timestamps <- function(data, month, year){
-    data %>%
-        dplyr::filter(
-            lubridate::month(value) == month,
-            lubridate::year(value) == year)
+get_n_weeks_adherence <- function(data){
+    data %>% 
+        tidyr::drop_na(value) %>%
+        dplyr::group_by(healthCode, startDate) %>%
+        dplyr::summarise(n_week_adherence = 
+                             n_distinct(weekInStudy, na.rm = T),
+                         last_weekInStudy = max(weekInStudy)) %>% 
+        dplyr::ungroup()
 }
 
-
-filter_by_adherence <- function(data, threshold){
-    data %>% 
-        dplyr::group_by(healthCode) %>%
-        dplyr::summarise(n = n_distinct(weekInStudy, na.rm = T)) %>%
-        dplyr::ungroup() %>%
-        dplyr::filter(n >= threshold)
+get_n_days_enrolled <- function(data, date){
+    data %>%
+        dplyr::mutate(n_days_enrolled = round(difftime(date, startDate), 0)) %>%
+        dplyr::filter(value <= date | is.na(value)) %>% 
+        dplyr::group_by(healthCode, startDate) %>% 
+        dplyr::summarise(n_days_enrolled = max(n_days_enrolled),
+                         last_weekInStudy = max(weekInStudy)) %>% 
+        dplyr::ungroup()
 }
 
 main <- function(){
@@ -79,14 +84,28 @@ main <- function(){
         refName='main'
     )
     tbl_entity <- synTableQuery(glue::glue("SELECT * FROM {TABLE_ID}"))
+    
     data <- tbl_entity$asDataFrame() %>%
         tibble::as_tibble() %>%
         dplyr::select(-starts_with("ROW")) %>%
-        pivot_longer(cols = !all_of(c("healthCode", "weekInStudy"))) %>%
-        filter_by_timestamps(MONTH, YEAR) %>%
-        filter_by_adherence(ACTIVITY_THRESHOLD) %>% 
-        dplyr::distinct(healthCode) %>%
-        get_info_mapping_bridge() %>%
+        pivot_longer(cols = !all_of(c("healthCode", "startDate","weekInStudy")))
+    
+    result <- list(
+        n_days_enrolled =  data %>% 
+            get_n_days_enrolled(MONTH_CEILING),
+        n_weeks_adherence =  data %>% 
+            get_n_weeks_adherence()) %>% 
+        purrr::reduce(dplyr::full_join, 
+                      by = c("healthCode", "startDate","last_weekInStudy")) %>% 
+        dplyr::mutate(is_adherence = ifelse(n_days_enrolled < lubridate::ddays(30) | 
+                                                n_week_adherence > 3, TRUE, FALSE))
+    
+    mapping <- result %>% 
+        distinct(healthCode) %>%
+        get_info_mapping_bridge()
+    
+    result %>% 
+        dplyr::inner_join(mapping, by = c("healthCode")) %>% 
         save_to_synapse(
             output_filename = OUTPUT_FILE,
             parent = PARENT_ID,

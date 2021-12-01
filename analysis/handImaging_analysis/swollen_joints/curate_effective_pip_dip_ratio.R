@@ -26,13 +26,7 @@ dip_ratio <- run_dip_width_ratio() %>%
     dplyr::select(dip_effective_ratio = value, everything())
 
 result <- pip_ratio %>% 
-    dplyr::inner_join(dip_ratio) %>%
-    dplyr::select(image_name = image, 
-                  hand, metric,
-                  pip_effective_ratio,
-                  dip_effective_ratio,
-                  pip_swollen,
-                  dip_swollen) %>%
+    dplyr::full_join(dip_ratio) %>%
     readr::write_tsv("finger_effective_ratio.tsv")
 
 file <- synapser::File("finger_effective_ratio.tsv", 

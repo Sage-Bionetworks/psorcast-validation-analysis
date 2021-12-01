@@ -12,7 +12,7 @@ source("utils/feature_extraction_utils.R")
 
 synapser::synLogin()
 
-TABLE_NAME <- "PsorcastAdherence-v1"
+TABLE_NAME <- "PsorcastAdherence"
 PROJECT_ID <- "syn22276946"
 DESCRIPTION <- "Measure adherence from psorcast project"
 
@@ -69,7 +69,8 @@ parse_study_state <- function(data){
         tidyr::drop_na() %>% 
         #' handle duplicate by extracting the first occurence
         dplyr::group_by(recordId, createdOn, healthCode, tableName) %>% 
-        dplyr::summarise(weekInStudy = first(weekInStudy)) %>% 
+        dplyr::summarise(weekInStudy = first(weekInStudy),
+                         startDate = first(startDate)) %>% 
         dplyr::ungroup()
 }
 
@@ -84,7 +85,8 @@ pivot_activity_tbl <- function(data){
         tidyr::pivot_wider(names_from = tableName, 
                            values_from = createdOn,
                            id_cols = all_of(c("healthCode", 
-                                              "weekInStudy")),
+                                              "weekInStudy",
+                                              "startDate")),
                            values_fill = NA_character_,
                            values_fn = max)
 }
@@ -96,6 +98,7 @@ pivot_activity_tbl <- function(data){
 store_schema <- function(table_name, project_id){
     cols <- list(
         Column(name = "healthCode", columnType = "STRING", maximumSize = 50),
+        Column(name = "startDate", columnType = "DATE"),
         Column(name = "weekInStudy", columnType = "INTEGER"),
         Column(name = "HandImaging-v2", columnType = "DATE"),
         Column(name = "PsoriasisDraw-v4", columnType = "DATE"),
