@@ -53,6 +53,9 @@ KEEP_COLS <- c(
 NEW_COLS <- list(
   Column(name = "participantId", 
          columnType = "STRING", 
+         maximumSize = 40),
+  Column(name = "version", 
+         columnType = "STRING", 
          maximumSize = 40))
 
 ####################################
@@ -94,9 +97,10 @@ main <- function(){
   #' - copy filehandles
   #' - replace participantID to participantId
   #' - regenerate table from source
-  #' 
-  purrr::map_dfr(PSORIASIS_DRAW_TBL, function(id){
+  purrr::map_dfr(names(PSORIASIS_DRAW_TBL), function(version){
+    id <- PSORIASIS_DRAW_TBL[[version]]
     query_table(id) %>% 
+      dplyr::mutate(version = version) %>%
       dplyr::select(participantId = participantID, everything()) %>%
       copy_file_handles(
         tbl_id = id,

@@ -1,3 +1,5 @@
+library(githubr)
+
 #' Utility function to join data with PPACMAN assessor
 #' by parsing single-visit participant by joining by 'participantId'
 #' and multiple-visit participant by their visit reference

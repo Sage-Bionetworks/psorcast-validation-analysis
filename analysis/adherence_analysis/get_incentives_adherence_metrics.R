@@ -23,14 +23,11 @@ bridgeclient::bridge_login(
     study = "sage-psorcast",
     credentials_file = ".bridge_creds")
 
-YEAR <- lubridate::year(lubridate::now())
-MONTH <- 11
+DATE <- lubridate::now() - lubridate::ddays(x = 1)
+YEAR <- lubridate::year(DATE)
+MONTH <- lubridate::month(DATE)
 MONTH_NAME <- month.name[MONTH]
-DATE <- lubridate::ymd(glue::glue("{YEAR}-{MONTH}-01"))
-MONTH_CEILING <- lubridate::ceiling_date(DATE, unit = 'month') - 
-    lubridate::ddays(x = 1)
-
-
+MONTH_FLOOR <- lubridate::ymd(glue::glue("{YEAR}-{MONTH}-01"))
 
 OUTPUT_FILE <- glue::glue("psorcast_",
                           YEAR, 
@@ -89,7 +86,6 @@ get_n_weeks_adherence <- function(data){
 get_n_days_enrolled <- function(data, date){
     data %>%
         dplyr::mutate(n_days_enrolled = round(difftime(date, startDate), 0)) %>%
-        dplyr::filter(value <= date | is.na(value)) %>% 
         dplyr::group_by(healthCode, startDate) %>% 
         dplyr::summarise(n_days_enrolled = max(n_days_enrolled),
                          last_weekInStudy = max(weekInStudy)) %>% 
@@ -107,22 +103,29 @@ main <- function(){
     )
     
     #' get entity
-    tbl_entity <- synTableQuery(glue::glue("SELECT * FROM {TABLE_ID}"))
+    tbl_entity <- synTableQuery(glue::glue(
+        "SELECT * FROM {TABLE_ID}"))
     
     #' Fetch table and pivot activity
     data <- tbl_entity$asDataFrame() %>%
         tibble::as_tibble() %>%
         dplyr::select(-starts_with("ROW")) %>%
-        pivot_longer(cols = !all_of(c("healthCode", "startDate","weekInStudy")))
+        pivot_longer(cols = !all_of(c("healthCode", 
+                                      "startDate",
+                                      "weekInStudy"))) %>% 
+        dplyr::filter(value <= DATE,
+                      value >= MONTH_FLOOR)
     
     #' Get metrics
     result <- list(
         n_days_enrolled =  data %>% 
-            get_n_days_enrolled(MONTH_CEILING),
+            get_n_days_enrolled(DATE),
         n_weeks_adherence =  data %>% 
             get_n_weeks_adherence()) %>% 
         purrr::reduce(dplyr::full_join, 
-                      by = c("healthCode", "startDate","last_weekInStudy")) %>% 
+                      by = c("healthCode", 
+                             "startDate",
+                             "last_weekInStudy")) %>% 
         dplyr::mutate(is_adherence = ifelse(
             n_days_enrolled < lubridate::ddays(30) | 
                 n_week_adherence > ACTIVITY_THRESHOLD, 

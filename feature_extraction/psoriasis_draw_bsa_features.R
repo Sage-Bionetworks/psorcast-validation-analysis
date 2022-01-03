@@ -83,9 +83,12 @@ calculate_coverage <- function(data){
             na.rm = TRUE)) %>%
         tidyr::separate(appVersion, c("_1", "_2", "_3", "build"), sep = " ")  %>% 
         dplyr::select(-c("_1", "_2", "_3")) %>%
-        dplyr::mutate(dig_bsa = case_when(
-            build < 20 ~ dig_bsa * .5,
-            TRUE ~ dig_bsa * 1))
+        dplyr::mutate(
+            dig_bsa = case_when(
+                build < 20 ~ dig_bsa * .5, TRUE ~ dig_bsa * 1),
+            dig_bsa = case_when(version == "V2" ~ dig_bsa / 100,
+                                TRUE ~ dig_bsa)
+        )
 }
 
 main <- function(){
