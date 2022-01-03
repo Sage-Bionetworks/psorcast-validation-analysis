@@ -49,6 +49,7 @@ get_activity_tables <- function(){
         tbl_df <- get_table(tbl_id, "studyStates.json")
         tbl_df %>%
             dplyr::mutate(tableName = tbl_name) %>%
+            dplyr::mutate(dataGroups = replace_na(dataGroups, "")) %>%
             dplyr::filter(!stringr::str_detect(dataGroups, "test_user")) %>%
             dplyr::select(recordId, 
                           dataGroups,

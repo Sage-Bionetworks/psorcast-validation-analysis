@@ -23,7 +23,7 @@ bridgeclient::bridge_login(
     study = "sage-psorcast",
     credentials_file = ".bridge_creds")
 
-DATE <- lubridate::now() - lubridate::ddays(x = 1)
+DATE <- lubridate::now() - lubridate::ddays(1)
 YEAR <- lubridate::year(DATE)
 MONTH <- lubridate::month(DATE)
 MONTH_NAME <- month.name[MONTH]
