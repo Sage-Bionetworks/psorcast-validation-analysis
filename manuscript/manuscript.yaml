@@ -1,0 +1,20 @@
+- name: Psorcast Manuscript - Public Release
+  type: Project
+  acl:
+  - principal_id: 3394042 # Aryton Tediarjo
+    access_type:
+    - READ
+    - DOWNLOAD
+    - UPDATE
+    - CREATE
+    - DELETE
+    - CHANGE_SETTINGS
+    - MODERATE
+    - CHANGE_PERMISSIONS
+  children:
+  - name: Figures
+    type: Folder
+  - name: Data
+    type: Folder
+  - name: Intermediate Files
+    type: Folder
