@@ -1,9 +1,7 @@
 library(synapser)
 
 synapser::synLogin()
-PARENT_ID <- "syn26840744"
-
-
+FEATURES_PARENT_ID <- "syn26840744"
 input_ref <- list(
     ppacman = "syn22337133",
     walk = "syn22391107",
@@ -15,7 +13,8 @@ input_ref <- list(
     merged = "syn25832975"
 )
 
-
 purrr::map(input_ref, function(syn_id){
-    synapserutils::copy(syn_id, PARENT_ID, updateExisting = T)
+    synapserutils::copy(syn_id, 
+                        FEATURES_PARENT_ID, 
+                        updateExisting = T)
 })

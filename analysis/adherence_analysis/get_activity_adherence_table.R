@@ -70,7 +70,11 @@ parse_study_state <- function(data){
         tidyr::unnest(studyStates) %>% 
         tidyr::drop_na() %>% 
         #' handle duplicate by extracting the first occurence
-        dplyr::group_by(recordId, createdOn, healthCode, tableName) %>% 
+        dplyr::group_by(recordId,
+                        dataGroups,
+                        createdOn, 
+                        healthCode, 
+                        tableName) %>% 
         dplyr::summarise(weekInStudy = first(weekInStudy),
                          startDate = first(startDate)) %>% 
         dplyr::ungroup()
@@ -88,6 +92,7 @@ pivot_activity_tbl <- function(data){
                            values_from = createdOn,
                            id_cols = all_of(c("healthCode", 
                                               "weekInStudy",
+                                              "dataGroups",
                                               "startDate")),
                            values_fill = NA_character_,
                            values_fn = max)
@@ -101,6 +106,7 @@ store_schema <- function(table_name, project_id){
     cols <- list(
         Column(name = "healthCode", columnType = "STRING", maximumSize = 50),
         Column(name = "startDate", columnType = "DATE"),
+        Column(name = "dataGroups", columnType = "STRING"),
         Column(name = "weekInStudy", columnType = "INTEGER"),
         Column(name = "HandImaging-v2", columnType = "DATE"),
         Column(name = "PsoriasisDraw-v4", columnType = "DATE"),

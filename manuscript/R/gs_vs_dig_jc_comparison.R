@@ -21,7 +21,7 @@ source("utils/feature_extraction_utils.R")
 ############################
 # Global Vars
 ############################
-PARENT_SYN_ID <- "syn25704998"
+PARENT_SYN_ID <- "syn26840745"
 GS_JOINT_COUNT <- "syn22281781"
 DIG_JOINT_COUNT <- "syn22281786"
 PPACMAN_TBL_ID <- "syn22337133"

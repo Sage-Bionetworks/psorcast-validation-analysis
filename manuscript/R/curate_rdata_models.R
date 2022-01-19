@@ -1,7 +1,6 @@
 #########################
 #' Function to map 
 #' based on Elias modelling data
-#'
 #########################
 library(synapser)
 library(ggplot2)
@@ -32,7 +31,7 @@ REF_LIST <- list(
     )
 )
 
-PARENT_ID <- "syn26524115"
+PARENT_ID <- "syn26842135"
 
 
 get_med_auc_info <- function(data){
@@ -96,10 +95,6 @@ purrr::map(names(REF_LIST), function(ref){
     rdata_key = REF_LIST[[ref]]$rdata_key
     glue_label = REF_LIST[[ref]]$glue_label
     metrics_list <- fetch_rdata(REF_LIST[[ref]]$id)
-    auc_iter_plot <- metrics_list$auc_iteration %>% 
-        plot_auc_iter() +
-        labs(title = "AUC scores on 1k Random-Forest Iterations",
-             subtitle = "Comparison AUC scores on different subgroups")
     row_loc <- list(
         combined = metrics_list$auc_iteration %>% 
             get_med_auc_info() %>%
@@ -127,27 +122,12 @@ purrr::map(names(REF_LIST), function(ref){
         tpr_fpr,
         random_data)
     
-    roc_auc_curves <- result %>%
-        visualize_roc_auc() +
-        theme_minimal() +
-        labs(
-            title= "Digital Jar Opener ROC-AUC Curves",
-            subtitle = "Modeling based on upper-pain outcome variables")
-    
-    plot <- patchwork::wrap_plots(
-        auc_iter_plot, 
-        roc_auc_curves, 
-        nrow = 2, ncol = 1)
-    
-    ggsave(REF_LIST[[ref]]$output_plot, plot)
-    
     result %>%
         readr::write_tsv(REF_LIST[[ref]]$output_tpr_fpr)
-    
     metrics_list$auc_iteration %>% 
         readr::write_tsv(REF_LIST[[ref]]$output_iter)
     
-    
+
     file = synapser::File(REF_LIST[[ref]]$output_tpr_fpr, 
                           parent = PARENT_ID)
     activity = synapser::Activity(
@@ -168,10 +148,4 @@ purrr::map(names(REF_LIST), function(ref){
         used = c(REF_LIST[[ref]]$id))
     synStore(file, activity = activity)
     
-    
-    file = synapser::File(REF_LIST[[ref]]$output_plot, 
-                          parent = PARENT_ID)
-    activity = synapser::Activity(
-        used = c(REF_LIST[[ref]]$id))
-    synStore(file, activity = activity)
 })

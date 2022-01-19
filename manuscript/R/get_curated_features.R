@@ -3,7 +3,7 @@
 #' for manuscript data for figures
 #' 
 #'  Activities curated:
-#'  -  Walk30Secs
+#'  - Walk30Secs
 #'  - Digital Jar Opener
 #' 
 #' Maintainer: aryton.tediarjo@sagebase.org
@@ -19,9 +19,9 @@ synapser::synLogin()
 ############################
 # Global Vars
 ############################
-MERGED_FEATURES <- "syn25832975"
+MERGED_FEATURES <- "syn26841919"
 PPACMAN_DATA <- "syn25006883"
-PARENT_ID <- "syn25704998"
+PARENT_ID <- "syn26840745"
 OUTPUT_FILENAME <- list(
     djo = "djo_curated_features.tsv",
     walk = "walk30s_curated_features.tsv"
@@ -206,7 +206,9 @@ main <- function(){
     
     #' Create activity object
     activity <- synapser::Activity(used = MERGED_FEATURES,
-                                   executed = GIT_URL)
+                                   executed = GIT_URL,
+                                   name = "curate psorcast features for analysis",
+                                   description = "merge features with clinical endpoints for analysis")
     
     #' Save Digital Jar Opener Features to Synapse
     file <- synapser::File(

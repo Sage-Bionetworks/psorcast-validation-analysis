@@ -36,7 +36,7 @@ OUTPUT_FILE <- glue::glue("psorcast_",
                           "_", 
                           "incentives_participants.tsv")
 ACTIVITY_THRESHOLD <- 3
-TABLE_ID <- "syn26486970"
+TABLE_ID <- "syn26637884"
 PARENT_ID <- "syn26438179"
 SCRIPT_PATH <- "analysis/adherence_analysis/get_incentives_adherence_metrics.R"
 
@@ -69,7 +69,7 @@ get_info_mapping_bridge <- function(data){
 get_n_weeks_adherence <- function(data){
     data %>% 
         tidyr::drop_na(value) %>%
-        dplyr::group_by(healthCode, startDate) %>%
+        dplyr::group_by(healthCode, dataGroups, startDate) %>%
         dplyr::summarise(n_week_adherence = 
                              n_distinct(weekInStudy, na.rm = T),
                          last_weekInStudy = max(weekInStudy)) %>% 
@@ -85,8 +85,9 @@ get_n_weeks_adherence <- function(data){
 #' @return get data with n_days since enrolllment
 get_n_days_enrolled <- function(data, date){
     data %>%
-        dplyr::mutate(n_days_enrolled = round(difftime(date, startDate), 0)) %>%
-        dplyr::group_by(healthCode, startDate) %>% 
+        dplyr::mutate(n_days_enrolled = round(
+            difftime(date, startDate), 0)) %>%
+        dplyr::group_by(healthCode, dataGroups, startDate) %>% 
         dplyr::summarise(n_days_enrolled = max(n_days_enrolled),
                          last_weekInStudy = max(weekInStudy)) %>% 
         dplyr::ungroup()
@@ -111,6 +112,7 @@ main <- function(){
         tibble::as_tibble() %>%
         dplyr::select(-starts_with("ROW")) %>%
         pivot_longer(cols = !all_of(c("healthCode", 
+                                      "dataGroups",
                                       "startDate",
                                       "weekInStudy"))) %>% 
         dplyr::filter(value <= DATE,
@@ -124,6 +126,7 @@ main <- function(){
             get_n_weeks_adherence()) %>% 
         purrr::reduce(dplyr::full_join, 
                       by = c("healthCode", 
+                             "dataGroups",
                              "startDate",
                              "last_weekInStudy")) %>% 
         dplyr::mutate(is_adherence = ifelse(
