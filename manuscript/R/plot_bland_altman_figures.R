@@ -64,7 +64,7 @@ OUTPUT_FILE_REF$tjc$plot <- plot_bland_altman(
                        expand=c(0,0), 
                        limits=c(-50,50)) +
     labs(title = "Patient vs Physician Tender Joint Count") + 
-    theme_minimal() + 
+    theme_classic() + 
     theme(plot.title = element_text(
         family = "sans", vjust = -1, 
         size = 20, margin=margin(0,0,60,0)))
@@ -81,7 +81,7 @@ OUTPUT_FILE_REF$draw$plot <- plot_bland_altman(
                        expand=c(0,0), 
                        limits=c(-25,25)) +
     labs(title = "Patient Digital vs Physician Body Surface Area") + 
-    theme_minimal() + 
+    theme_classic() + 
     theme(plot.title = element_text(
         family = "sans", vjust = -1, 
         size = 20, margin=margin(0,0,60,0)))

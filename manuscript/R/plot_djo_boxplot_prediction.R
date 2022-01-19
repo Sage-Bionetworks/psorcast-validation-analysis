@@ -69,8 +69,9 @@ OUTPUT_REF$shuffled_vs_adjusted$plot <- dplyr::bind_rows(psa_vs_pso, uei) %>%
                alpha = 0.05) +
     scale_color_manual(values = c("grey", "blue", "grey", "red")) +
     labs(title = "Digital Jar Opener Classification Model",
-         y = "ROC AUC") +
-    theme_minimal() +
+         y = "ROC AUC",
+         x = "") +
+    theme_classic() +
     theme(legend.position = "none") 
 
 OUTPUT_REF$auc_roc_curve$plot <- dplyr::bind_rows(psa_vs_pso_fpr_tpr, 
@@ -83,7 +84,7 @@ OUTPUT_REF$auc_roc_curve$plot <- dplyr::bind_rows(psa_vs_pso_fpr_tpr,
     ggplot(aes(x = fpr, y = tpr, color = group)) +
     geom_line() +
     scale_color_manual(values = c("black", "blue", "red")) +
-    theme_minimal() +
+    theme_classic() +
     labs(y = "True Positive Rate", 
          x = "False Positive Rate",
          title = "Digital Jar Open\nMedian Model ROC Curves") +
@@ -101,8 +102,9 @@ OUTPUT_REF$overall_rotation_diagnosis$plot <- djo_curated  %>%
     scale_color_manual(values = c("grey", "grey", "red")) +
     labs(
         title = "Digital Jar Open\nOverall Rotation",
-        y = "Overall Rotation") +
-    theme_minimal()
+        y = "Overall Rotation",
+        x = "") +
+    theme_classic()
 
 
 purrr::map(OUTPUT_REF, function(content){

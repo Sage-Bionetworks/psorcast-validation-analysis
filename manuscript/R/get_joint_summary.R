@@ -3,8 +3,6 @@
 # joint counts for PSA users
 # @author: aryton.tediarjo@sagebase.org
 ############################################################
-
-# import libraries
 library(synapser)
 library(data.table)
 library(tidyverse)
@@ -38,7 +36,8 @@ GIT_URL <- getPermlink(
         repository = GIT_REPO, 
         ref="branch", 
         refName='main'), 
-    repositoryPath = file.path('analysis/jointCounts_analysis', SCRIPT_NAME))
+    repositoryPath = file.path(
+        'manuscript/R', SCRIPT_NAME))
 
 
 get_gs_joint_summaries <- function(){
