@@ -1,4 +1,4 @@
-- name: Psorcast Manuscript - Public Release
+- name: Psorcast - Manuscript - Test
   type: Project
   acl:
   - principal_id: 3394042 # Aryton Tediarjo
@@ -14,7 +14,7 @@
   children:
   - name: Figures
     type: Folder
-  - name: Data
+  - name: Features
     type: Folder
   - name: Intermediate Files
     type: Folder

@@ -3,7 +3,6 @@
 #' for manuscript data for figures
 #' 
 #'  Activities curated:
-#'  - Walk30Secs
 #'  - Digital Jar Opener
 #' 
 #' Maintainer: aryton.tediarjo@sagebase.org
@@ -12,6 +11,7 @@ library(synapser)
 library(tidyverse)
 library(data.table)
 library(githubr)
+source("manuscript/utils/fetch_id_utils.R")
 
 synapser::synLogin()
 
@@ -19,12 +19,11 @@ synapser::synLogin()
 ############################
 # Global Vars
 ############################
-MERGED_FEATURES <- "syn26841919"
+MERGED_FEATURES <- SYN_ID_REF$feature_extraction$merged
 PPACMAN_DATA <- "syn25006883"
 PARENT_ID <- "syn26840745"
 OUTPUT_FILENAME <- list(
-    djo = "djo_curated_features.tsv",
-    walk = "walk30s_curated_features.tsv"
+    djo = "djo_curated_features.tsv"
 )
 
 ############################
@@ -50,13 +49,9 @@ GIT_URL <- githubr::getPermlink(
 annotate_classes <- function(data){
     data %>%
         dplyr::mutate(upper_body_pain = gs_upper_body_pain,
-                      lower_body_pain = ifelse(has_lower_pain == 1, TRUE, FALSE),
-                      upper_enthesis =  ifelse(has_upper_enthesitis == 1, TRUE, FALSE),
-                      lower_enthesis =  ifelse(has_lower_enthesitis == 1, TRUE, FALSE)) %>% 
+                      upper_enthesis =  ifelse(has_upper_enthesitis == 1, TRUE, FALSE)) %>% 
         dplyr::mutate(upper_body_pain = factor(upper_body_pain, level = c(FALSE, TRUE)),
-                      lower_body_pain = factor(lower_body_pain, level = c(FALSE, TRUE)),
-                      upper_enthesis = factor(upper_enthesis, level = c(FALSE, TRUE)),
-                      lower_enthesis = factor(lower_enthesis, level = c(FALSE, TRUE)))
+                      upper_enthesis = factor(upper_enthesis, level = c(FALSE, TRUE)))
 }
 
 #' Function to retrieve ppacman dataset
@@ -85,20 +80,6 @@ get_total_rotation <- function(data){
             djo_leftClockwise, djo_rightClockwise))
 }
 
-
-#' Function to retrieve walk30s data
-#' and total rotation features
-#' @param data 
-#' @return featurized walk data
-get_walk_features <- function(data){
-    remove_features <- c("y_speed_of_gait", "x_speed_of_gait", 
-                         "z_speed_of_gait", "AA_stride_regularity",
-                         "AA_step_regularity", "AA_symmetry") %>% 
-        stringr::str_c(collapse = "|")
-    data %>% 
-        dplyr::select(-matches(remove_features)) 
-}
-
 #' get uppper body pain
 #' from merged features
 #' @param data merged dataframe with required columns
@@ -120,37 +101,6 @@ get_upper_body_pain <- function(data){
                                 is.na(gs_swell_status_shoulder)))
 }
 
-#' get lower body pain
-#' from merged features
-#' @param data merged dataframe with required columns
-#' @return data with lower body pain class
-get_lower_body_pain <- function(data){
-    data %>%
-        dplyr::mutate(
-            complete_case_joint_pain_list = gs_jc_joint_list,
-            complete_case_swollen_joint_list = gs_swell_joint_list) %>%
-        dplyr::mutate(
-            complete_case_joint_pain_list = coalesce(
-                complete_case_joint_pain_list,  tjc_backup),
-            complete_case_swollen_joint_list = coalesce(
-                complete_case_swollen_joint_list,  sjc_backup)) %>%
-        dplyr::mutate(
-            has_lower_pain = case_when(
-                stringr::str_detect(
-                    complete_case_joint_pain_list, 
-                    "knee|hip|ankle") ~ 1, TRUE ~ 0),
-            knee_pain = case_when(
-                stringr::str_detect(
-                    complete_case_joint_pain_list, "knee") ~ 1, TRUE ~  0),
-            hip_pain = case_when(
-                stringr::str_detect(
-                    complete_case_joint_pain_list, "hip") ~ 1, TRUE ~  0),
-            ankle_pain = case_when(
-                stringr::str_detect(
-                    complete_case_joint_pain_list, "ankle") ~ 1, TRUE ~ 0)) %>%
-        dplyr::ungroup()
-}
-
 main <- function(){
     #' Get merged features and merge with PPACMAN information
     #' and annotate classes based on outcome variables
@@ -161,7 +111,6 @@ main <- function(){
             get_ppacman(), 
             by = c("participantId", "visit_num")) %>%
         get_upper_body_pain() %>%
-        get_lower_body_pain() %>%
         annotate_classes() %>% 
         dplyr::group_by(participantId, visit_num) %>%
         dplyr::summarise_all(last)
@@ -187,27 +136,10 @@ main <- function(){
         tidyr::drop_na() %>%
         readr::write_tsv(OUTPUT_FILENAME$djo)
     
-    #' Get walk30secs features 
-    walk_features <- merged_features %>% 
-        dplyr::mutate(
-            combined_lower_pain = as.logical(lower_enthesis) | 
-                as.logical(lower_body_pain)) %>%
-        dplyr::select(participantId, 
-                      visit_num,
-                      age,
-                      sex,
-                      diagnosis,
-                      lower_enthesis,
-                      lower_body_pain, 
-                      combined_lower_pain,
-                      matches("^x_|^y_|^z_|^AA_")) %>%
-        tidyr::drop_na() %>%
-        readr::write_tsv(OUTPUT_FILENAME$walk)
-    
     #' Create activity object
     activity <- synapser::Activity(used = MERGED_FEATURES,
                                    executed = GIT_URL,
-                                   name = "curate psorcast features for analysis",
+                                   name = "curate psorcast djo features for analysis",
                                    description = "merge features with clinical endpoints for analysis")
     
     #' Save Digital Jar Opener Features to Synapse
@@ -217,12 +149,6 @@ main <- function(){
     synStore(file, activity = activity)
     unlink(file$path)
     
-    #' Save Walk30Secs Features to Synapse
-    file <- synapser::File(
-        OUTPUT_FILENAME$walk, 
-        parent = PARENT_ID)
-    synStore(file, activity = activity)
-    unlink(file$path)
 }
 
 main()
