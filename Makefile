@@ -46,6 +46,12 @@ generate_manuscript:
 	Rscript manuscript/feature_extraction/digitalJarOpen_rotation_features.R || exit 1
 	Rscript manuscript/feature_extraction/jointSummaries_features.R || exit 1
 	Rscript manuscript/feature_extraction/psorcast_merged_features.R || exit 1
+	Rscript manuscript/analysis/curate_djo_features.R || exit 1
+	Rscript manuscript/analysis/gs_vs_dig_jc_comparison.R || exit 1
+	Rscript manuscript/analysis/get_joint_summary.R || exit 1
+	Rscript manuscript/figures/plot_bland_altman_figures.R || exit 1
+	Rscript manuscript/figures/run_djo_model_and_figures.R || exit 1
+	Rscript manuscript/figures/plot_djo_boxplot_prediction.R || exit 1
 
 misc:
 	Rscript $(ANALYSIS_PATH)/handImaging_analysis/curateSwollenJointsDactyliticFingers.R || exit 1

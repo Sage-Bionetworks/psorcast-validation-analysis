@@ -9,6 +9,7 @@ library(tidyverse)
 library(jsonlite)
 source("manuscript/utils/feature_extraction_utils.R")
 source("manuscript/utils/fetch_id_utils.R")
+source("manuscript/utils/helper_utils.R")
 
 synapser::synLogin()
 
@@ -16,9 +17,9 @@ synapser::synLogin()
 # Global Vars
 ############################
 PARENT_SYN_ID <- SYN_ID_REF$curated_features$parent
-GS_JOINT_COUNT <- "syn22281781"
-GS_JOINT_SWELL <- "syn22281780"
-PPACMAN_TBL_ID <- "syn22337133"
+GS_JOINT_COUNT <- config::get("tables")$md_joint_counting
+GS_JOINT_SWELL <- config::get("tables")$md_joint_swelling
+PPACMAN_TBL_ID <- SYN_ID_REF$feature_extraction$ppacman
 VISIT_REF_ID <- SYN_ID_REF$feature_extraction$visit_summary
 FILE_COLUMNS <- "summary.json"
 OUTPUT_FILE <- "joint_avg_reported.tsv"
@@ -26,17 +27,16 @@ OUTPUT_FILE <- "joint_avg_reported.tsv"
 ############################
 # Global Vars
 ############################
-SCRIPT_NAME <- "get_joint_summary.R"
-GIT_TOKEN_PATH <- config::get("git")$token_path
-GIT_REPO <- config::get("git")$repo
-githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-GIT_URL <- getPermlink(
-    repository = getRepo(
-        repository = GIT_REPO, 
-        ref="branch", 
-        refName='main'), 
-    repositoryPath = file.path(
-        'manuscript/analysis', SCRIPT_NAME))
+SCRIPT_PATH <- file.path(
+    'manuscript',
+    'analysis',
+    'get_joint_summary.R')
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main')
 
 
 get_gs_joint_summaries <- function(){

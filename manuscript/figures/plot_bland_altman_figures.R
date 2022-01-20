@@ -15,6 +15,7 @@ library(data.table)
 library(DescTools)
 source("manuscript/utils/fetch_id_utils.R")
 source("manuscript/utils/feature_extraction_utils.R")
+source("manuscript/utils/helper_utils.R")
 synLogin()
 
 # get merged features
@@ -101,7 +102,8 @@ OUTPUT_REF$tjc$plot <- plot_bland_altman(
     scale_y_continuous(name = "TJC Difference", 
                        expand=c(0,0), 
                        limits=c(-50,50)) +
-    labs(title = "Patient vs Physician Tender Joint Count") + 
+    labs(title = "Patient vs Physician Tender Joint Count",
+         x = "TJC Average") + 
     theme_classic() + 
     theme(plot.title = element_text(
         family = "sans", vjust = -1, 
@@ -119,7 +121,8 @@ OUTPUT_REF$draw$plot <- plot_bland_altman(
     scale_y_continuous(name = "BSA Difference", 
                        expand=c(0,0), 
                        limits=c(-25,25)) +
-    labs(title = "Patient Digital vs Physician Body Surface Area") + 
+    labs(title = "Patient Digital vs Physician Body Surface Area",
+         x = "BSA Average") + 
     theme_classic() + 
     theme(plot.title = element_text(
         family = "sans", vjust = -1, 

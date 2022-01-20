@@ -21,7 +21,7 @@ synapser::synLogin()
 # Global Vars
 ############################
 MERGED_FEATURES <- SYN_ID_REF$feature_extraction$merged
-PPACMAN_DATA <- "syn25006883"
+PPACMAN_DATA <- config::get("tables")$ppacman_assessor
 PARENT_ID <- SYN_ID_REF$curated_features$parent
 OUTPUT_FILENAME <- list(
     djo = "djo_curated_features.tsv"
@@ -33,15 +33,13 @@ OUTPUT_FILENAME <- list(
 SCRIPT_PATH <- file.path('manuscript',
                          'analysis',
                          'curate_djo_features.R')
-GIT_TOKEN_PATH <- config::get("git")$token_path
-GIT_REPO <- config::get("git")$repo
-githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-GIT_URL <- githubr::getPermlink(
-    repository = githubr::getRepo(
-        repository = GIT_REPO, 
-        ref="branch", 
-        refName='main'), 
-    repositoryPath = SCRIPT_PATH)
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main')
+
 
 
 #' Function  to annotate each classes based

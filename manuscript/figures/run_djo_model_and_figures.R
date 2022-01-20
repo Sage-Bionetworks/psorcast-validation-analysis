@@ -10,6 +10,7 @@ library(synapser)
 library(ROCit)
 source("manuscript/utils/fetch_id_utils.R")
 source("manuscript/utils/feature_extraction_utils.R")
+source("manuscript/utils/helper_utils.R")
 synLogin()
 
 FIGURES_PARENT_ID <- SYN_ID_REF$figures$parent
@@ -897,7 +898,7 @@ abline(h = 0.5, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -905,7 +906,7 @@ activity <- Activity(used = DJO_CURATED_FEATURES,
                      executed = GIT_URL)
 synapser::synStore(file, activity = activity)
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -936,7 +937,7 @@ abline(h = p2, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -984,7 +985,7 @@ boxplot(dat2$age ~ dat2$PsA,
 mtext(side = 3, "(d)", at = 0.3, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1027,7 +1028,7 @@ abline(h = 0.5, col = "red")
 mtext(side = 3, "(c)", at = 0.4, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1055,7 +1056,7 @@ legend("topleft", legend = c("original", "shuffled"), text.col = c("darkblue", "
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1094,7 +1095,7 @@ boxplot(dat1$total_rotation ~ dat1$site,
 mtext(side = 3, "(c)", at = 0.5, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1135,7 +1136,7 @@ abline(h = 0, col = "red")
 mtext(side = 3, "(b)", at = 0.5, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1170,7 +1171,7 @@ abline(h = 0.5, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1200,7 +1201,7 @@ legend("topright", legend = c("unadjusted", "adjusted", "shuffled"), text.col = 
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1235,7 +1236,7 @@ abline(h = p2, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1267,7 +1268,7 @@ abline(h = 0, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")
@@ -1301,7 +1302,7 @@ abline(h = 0, col = "red")
 mtext(side = 3, "(b)", at = 0.5, cex = lcex)
 dev.off()
 file <- synapser::File(figpath, 
-                       parent = PARENT_ID,
+                       parent = FIGURES_PARENT_ID,
                        analysisType = "digital jar open",
                        pipelineStep = "figures",
                        task = "digital jar open")

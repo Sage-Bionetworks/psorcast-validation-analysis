@@ -11,6 +11,7 @@ library(tidyverse)
 library(ROCit)
 library(ggforce)
 source("manuscript/utils/fetch_id_utils.R")
+source("manuscript/utils/helper_utils.R")
 synapser::synLogin()
 
 # get github url
@@ -118,7 +119,7 @@ OUTPUT_REF$shuffled_vs_adjusted$plot <- dplyr::bind_rows(psa_vs_pso, uei) %>%
     ggplot(aes(x = label, 
                y = value, 
                color = label)) +
-    geom_boxplot(width = 0.5) +
+    geom_boxplot(width = 0.35) +
     geom_point(position = position_jitternormal(),
                alpha = 0.05) +
     scale_color_manual(
@@ -151,7 +152,8 @@ OUTPUT_REF$overall_rotation_diagnosis$plot <- djo_curated  %>%
     ggplot(aes(x = diagnosis, 
                y = total_rotation, 
                color = diagnosis)) +
-    geom_boxplot(outlier.shape = NA) +
+    geom_boxplot(outlier.shape = NA,
+                 width = 0.35) +
     ggpubr::stat_compare_means(
         label = "p.signif",
         comparisons = list(c("PsO", "PsA"), 
