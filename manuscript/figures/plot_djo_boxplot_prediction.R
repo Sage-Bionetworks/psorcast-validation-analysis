@@ -6,24 +6,56 @@ library(synapser)
 library(ggplot2)
 library(tidyverse)
 library(ROCit)
+library(ggforce)
+source("manuscript/utils/fetch_id_utils.R")
 synapser::synLogin()
 
-PARENT_ID <- "syn26840743"
+
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = "manuscript/figures/plo_djo_boxplot_prediction.R",
+    ref="branch", 
+    refName='main')
+PARENT_ID <- SYN_ID_REF$figures$parent
 INPUT_REF <- list(
-    djo_curated = "syn26842131",
-    upper_pain_auc_iter = "syn26842243",
-    upper_pain_fpr_tpr = "syn26842242",
-    psa_vs_pso_auc_iter = "syn26842137",
-    psa_vs_pso_fpr_tpr = "syn26842241"
+    djo_curated = SYN_ID_REF$curated_features$curated_djo,
+    upper_pain_auc_iter = SYN_ID_REF$model_performance$uei_pso_auc_iter,
+    upper_pain_fpr_tpr = SYN_ID_REF$model_performance$uei_pso_md_fpr_tpr,
+    psa_vs_pso_auc_iter = SYN_ID_REF$model_performance$psa_pso_auc_iter,
+    psa_vs_pso_fpr_tpr = SYN_ID_REF$model_performance$psa_pso_md_fpr_tpr
 )
 
 OUTPUT_REF <- list(
-    overall_rotation_diagnosis = list(plot = NULL,
-                                      output_file = "Figure_3D.png"),
-    auc_roc_curve =  list(plot = NULL,
-                          output_file = "Figure_3F.png"),
-    shuffled_vs_adjusted =  list(plot = NULL,
-                                 output_file = "Figure_3E.png")
+    overall_rotation_diagnosis = list(
+        plot = NULL,
+        used = c(INPUT_REF$djo_curated),
+        output_file = "Figure_3D.png",
+        analysisType = "digital jar open",
+        analysisSubtype = "overall rotation comparison",
+        pipelineStep = "figures",
+        name = "generate plot for overall rotation",
+        description = "compare overall rotation across groups"),
+    auc_roc_curve =  list(
+        plot = NULL,
+        used = c(INPUT_REF$upper_pain_fpr_tpr,
+                 INPUT_REF$psa_vs_pso_fpr_tpr),
+        output_file = "Figure_3F.png",
+        analysisType = "digital jar open",
+        analysisSubtype = "Prediction ROC-AUC Curve",
+        pipelineStep = "figures",
+        name = "plot ROC-AUC curve",
+        description = "compare ROC-AUC Curves based on different clinical endpoint"),
+    shuffled_vs_adjusted =  list(
+        plot = NULL,
+        used = c(INPUT_REF$upper_pain_auc_iter,
+                 INPUT_REF$psa_vs_pso_auc_iter),
+        output_file = "Figure_3E.png",
+        analysisType = "digital jar open",
+        analysisSubtype = "overall rotation comparison",
+        pipelineStep = "figures",
+        name = "generate AUC iteration (1000 fold) scores acrosss groups",
+        description = "compare AUC iteration (1000 fold) across groups")
 )
 
 djo_curated <- synGet(INPUT_REF$djo_curated)$path %>% 
@@ -108,8 +140,19 @@ OUTPUT_REF$overall_rotation_diagnosis$plot <- djo_curated  %>%
 
 
 purrr::map(OUTPUT_REF, function(content){
-    ggsave(content$output_file, content$plot, width = 8)
-    file = synapser::File(content$output_file, parent = PARENT_ID)
+    ggsave(content$output_file, 
+           content$plot, 
+           width = 8)
+    file = synapser::File(
+        content$output_file, 
+        parent = PARENT_ID,
+        analysisType = content$analysisType,
+        analysisSubtype = content$analysisSubtype,
+        pipelineStep = content$pipelineStep,
+        name = content$name,
+        description = content$description)
+    activity = Activity(used = content$used,
+                        executed = GIT_URL)
     synStore(file)
     unlink(content$output_file)
 })

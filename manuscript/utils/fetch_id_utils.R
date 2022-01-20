@@ -63,5 +63,42 @@ SYN_ID_REF$feature_extraction <- list(
     merged =  get_feature_extraction_id(
         tbl_df, 
         analysis_type = "merged feature files") %>% .$id
-    
+)
+
+SYN_ID_REF$curated_features <- list(
+    parent = tbl_df %>% 
+        dplyr::filter(type == "folder",
+                      name == "Curated Features") %>% .$id,
+    curated_djo = tbl_df %>% 
+        dplyr::filter(analysisType == "digital jar open",
+                      pipelineStep == "feature curation") %>% .$id
+)
+
+
+SYN_ID_REF$model_performance <- list(
+    parent = tbl_df %>% 
+        dplyr::filter(type == "folder",
+                      name == "Model Performance") %>% .$id,
+    psa_pso_md_fpr_tpr = tbl_df %>% 
+        dplyr::filter(analysisType == "digital jar open",
+                      analysisSubtype == "psa vs pso - median iter",
+                      pipelineStep == "prediction") %>% .$id,
+    psa_pso_auc_iter = tbl_df %>% 
+        dplyr::filter(analysisType == "digital jar open",
+                      analysisSubtype == "psa vs pso - auc iter",
+                      pipelineStep == "prediction") %>% .$id,
+    uei_pso_md_fpr_tpr = tbl_df %>% 
+        dplyr::filter(analysisType == "digital jar open",
+                      analysisSubtype == "uei - median iter",
+                      pipelineStep == "prediction") %>% .$id,
+    uei_pso_auc_iter = tbl_df %>% 
+        dplyr::filter(analysisType == "digital jar open",
+                      analysisSubtype == "uei - auc iter",
+                      pipelineStep == "prediction") %>% .$id
+)
+
+SYN_ID_REF$figures <- list(
+    parent = tbl_df %>% 
+        dplyr::filter(type == "folder",
+                      name == "Figures") %>% .$id
 )

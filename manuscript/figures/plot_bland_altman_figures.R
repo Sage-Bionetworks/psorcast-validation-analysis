@@ -1,3 +1,8 @@
+################################################
+# This script is used for plotting
+# bland altman figures used in the manuscript
+# @Author: aryton.tediarjo@sagebase.org
+################################################
 library(synapser)
 library(knit2synapse)
 library(tidyverse)
@@ -8,13 +13,38 @@ library(ggExtra)
 library(ggpubr)
 library(data.table)
 library(DescTools)
-
+source("manuscript/utils/fetch_id_utils.R")
+source("manuscript/utils/feature_extraction_utils.R")
 synLogin()
-MERGED_FEATURES <- "syn26841919"
-PARENT_ID <- "syn26840743"
-OUTPUT_FILE_REF <- list(
-    draw = list(plot = NULL, output_file = "Figure_1B.png"),
-    tjc = list(plot = NULL, output_file = "Figure_2B.png")
+
+
+MERGED_FEATURES <- SYN_ID_REF$feature_extraction$merged
+PARENT_ID <- SYN_ID_REF$figures$parent
+OUTPUT_REF <- list(
+    draw = list(plot = NULL, 
+                output_file = "Figure_1B.png",
+                analysisType = "psoriasis draw",
+                analysisSubtype = "concordance analysis",
+                pipelineStep = "figures",
+                task = "psoriasis draw",
+                description = "Bland-Altman Plot with CCC score for figure 1B",
+                name = "Plot PsoDraw Concordance"),
+    tjc = list(plot = NULL, 
+               output_file = "Figure_2B.png",
+               analysisType = "joint counts analysis",
+               analysisSubtype = "concordance analysis",
+               pipelineStep = "figures",
+               task = "digital joint count",
+               description = "Bland-Altman Plot with CCC score for figure 2B",
+               name = "Plot joint counts Concordance")
+)
+
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = "manuscript/figures/plot_bland_altman_figures.R",
+    ref="branch", 
+    refName='main'
 )
 
 plot_bland_altman <- function(data, 
@@ -53,7 +83,7 @@ plot_bland_altman <- function(data,
 
 
 data <-  fread(synGet(MERGED_FEATURES)$path)
-OUTPUT_FILE_REF$tjc$plot <- plot_bland_altman(
+OUTPUT_REF$tjc$plot <- plot_bland_altman(
     data %>%
         tidyr::drop_na(dig_jc_counts, gs_jc_counts),
     dig_measure = "dig_jc_counts",
@@ -69,7 +99,7 @@ OUTPUT_FILE_REF$tjc$plot <- plot_bland_altman(
         family = "sans", vjust = -1, 
         size = 20, margin=margin(0,0,60,0)))
 
-OUTPUT_FILE_REF$draw$plot <- plot_bland_altman(
+OUTPUT_REF$draw$plot <- plot_bland_altman(
     data %>% 
         dplyr::mutate(dig_bsa = dig_bsa * 100) %>%
         drop_na(c(dig_bsa, gs_bsa)),
@@ -87,9 +117,19 @@ OUTPUT_FILE_REF$draw$plot <- plot_bland_altman(
         size = 20, margin=margin(0,0,60,0)))
 
 
-purrr::map(OUTPUT_FILE_REF, function(content){
+purrr::map(OUTPUT_REF, function(content){
     ggsave(content$output_file, content$plot)
-    file = synapser::File(content$output_file, parent = PARENT_ID)
-    synStore(file)
+    file = synapser::File(
+        content$output_file, 
+        parent = PARENT_ID,
+        analysisType = content$analysisType,
+        analysisSubtype = content$analysisSubtype,
+        pipelineStep = content$pipelineStep,
+        task = content$task)
+    activity = Activity(used = MERGED_FEATURES,
+                        executed = GIT_URL,
+                        name = content$name,
+                        description = content$description)
+    synStore(file, activity = activity)
     unlink(content$output_file)
 })

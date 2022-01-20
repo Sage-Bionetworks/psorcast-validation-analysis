@@ -21,7 +21,7 @@ synapser::synLogin()
 ############################
 MERGED_FEATURES <- SYN_ID_REF$feature_extraction$merged
 PPACMAN_DATA <- "syn25006883"
-PARENT_ID <- "syn26840745"
+PARENT_ID <- SYN_ID_REF$curated_features$parent
 OUTPUT_FILENAME <- list(
     djo = "djo_curated_features.tsv"
 )
@@ -29,9 +29,9 @@ OUTPUT_FILENAME <- list(
 ############################
 # Git Reference
 ############################
-SCRIPT_PATH <- file.path('analysis', 
-                         "manuscript_curation", 
-                         "get_curated_features.R")
+SCRIPT_PATH <- file.path('manuscript',
+                         'analysis',
+                         'curate_djo_features.R')
 GIT_TOKEN_PATH <- config::get("git")$token_path
 GIT_REPO <- config::get("git")$repo
 githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
@@ -146,8 +146,15 @@ main <- function(){
     file <- synapser::File(
         OUTPUT_FILENAME$djo, 
         parent = PARENT_ID)
-    synStore(file, activity = activity)
+    entity <- synStore(file, activity = activity)
     unlink(file$path)
+    
+    #' add annotation
+    synSetAnnotations(
+        entity$properties$id,
+        analysisType = "digital jar open",
+        pipelineStep = "feature curation",
+        task = "digital jar open")
     
 }
 

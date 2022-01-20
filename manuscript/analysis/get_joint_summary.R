@@ -6,21 +6,20 @@
 library(synapser)
 library(data.table)
 library(tidyverse)
-library(patchwork)
-library(ggplot2)
 library(jsonlite)
-synLogin()
-source("utils/feature_extraction_utils.R")
+source("manuscript/utils/feature_extraction_utils.R")
+source("manuscript/utils/fetch_id_utils.R")
 
+synapser::synLogin()
 
 ############################
 # Global Vars
 ############################
-PARENT_SYN_ID <- "syn26842134"
+PARENT_SYN_ID <- SYN_ID_REF$curated_features$parent
 GS_JOINT_COUNT <- "syn22281781"
 GS_JOINT_SWELL <- "syn22281780"
 PPACMAN_TBL_ID <- "syn22337133"
-VISIT_REF_ID <- "syn25825626"
+VISIT_REF_ID <- SYN_ID_REF$feature_extraction$visit_summary
 FILE_COLUMNS <- "summary.json"
 OUTPUT_FILE <- "joint_avg_reported.tsv"
 
@@ -37,7 +36,7 @@ GIT_URL <- getPermlink(
         ref="branch", 
         refName='main'), 
     repositoryPath = file.path(
-        'manuscript/R', SCRIPT_NAME))
+        'manuscript/analysis', SCRIPT_NAME))
 
 
 get_gs_joint_summaries <- function(){
@@ -87,14 +86,22 @@ main <- function(){
         summarize_joint_by_average() %>% 
         readr::write_tsv(OUTPUT_FILE)
     file <- synapser::File(OUTPUT_FILE, PARENT_SYN_ID)
-    synStore(file, 
-             activityName = "get each joint location summary",
+    entity <- synStore(file, 
+                       activityName = "get each joint location summary",
              used = c(PPACMAN_TBL_ID,
                       VISIT_REF_ID,
                       GS_JOINT_SWELL, 
                       GS_JOINT_COUNT), 
              executed = GIT_URL)
     unlink(OUTPUT_FILE)
+    
+    #' add annotation
+    synSetAnnotations(
+        entity$properties$id,
+        analysisType = "joint counts analysis",
+        analysisSubtype = "average joint reports",
+        pipelineStep = "feature curation",
+        task = "gold-standard joint count")
 }
 
 main()

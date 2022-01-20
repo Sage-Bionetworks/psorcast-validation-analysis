@@ -7,9 +7,21 @@
 library(PRROC)
 library(ppcor)
 library(synapser)
+library(ROCit)
+source("manuscript/utils/fetch_id_utils.R")
+source("manuscript/utils/feature_extraction_utils.R")
 synLogin()
 
-PARENT_ID <- "syn26840743"
+FIGURES_PARENT_ID <- SYN_ID_REF$figures$parent
+MODEL_PARENT_ID <- SYN_ID_REF$model_performance$parent
+DJO_CURATED_FEATURES <- SYN_ID_REF$curated_features$curated_djo
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = "manuscript/figures/run_djo_model_and_figures.R",
+    ref="branch", 
+    refName='main'
+)
 
 get_med_auc_info <- function(data){
     #' get median AUCs across folds
@@ -654,7 +666,7 @@ GenerateSiteVariable <- function(dat,
 #####################################################
 ## shape the data for the analysis
 #####################################################
-dat0 <- read.delim(synGet("syn26148414")$path, header = TRUE, quote = "")
+dat0 <- read.delim(synGet(DJO_CURATED_FEATURES)$path, header = TRUE, quote = "")
 dim(dat0)
 
 #####################################################
@@ -729,18 +741,38 @@ uei_data <- fetch_results(
     "Combined Upper Pain ({auc})", 
     "combined_upper_pain")
 
-output_ref <- c("djo_model_uei_md_fpr_tpr.tsv",
-                "djo_model_uei_auc_iter.tsv")
+output_ref <- list(
+    md_fpr_tpr = list(
+        output_filename = "djo_model_uei_md_fpr_tpr.tsv",
+        analysisType = "digital jar open",
+        analysisSubtype = "uei - median iter",
+        pipelineStep = "prediction",
+        name = "get FPR/TPR",
+        description = "retrieve median FPR/TPR across iteration for ROC-AUC curve plots"),
+    auc_iter = list(
+        output_filename = "djo_model_uei_auc_iter.tsv",
+        analysisType = "digital jar open",
+        analysisSubtype = "uei - auc iter",
+        pipelineStep = "prediction",
+        name = "get AUC across 1k folds",
+        description = "Retrieve AUC across 1k folds to check stability"))
 uei_data$md_fpr_tpr %>% 
-    readr::write_tsv(output_ref[[1]])
+    readr::write_tsv(output_ref$md_fpr_tpr$output_filename)
 uei_data$auc_iter %>% 
-    readr::write_tsv(output_ref[[2]])
-purrr::map(output_ref, function(filename){
+    readr::write_tsv(output_ref$auc_iter$output_filename)
+purrr::map(output_ref, function(content){
     file <- synapser::File(
-        filename, 
-        parent = "syn26842135")
-    synStore(file)
-    unlink(filename)
+        content$output_filename, 
+        parent = MODEL_PARENT_ID,
+        analysisType = content$analysisType,
+        analysisSubtype = content$analysisSubtype,
+        pipelineStep = content$pipelineStep)
+    activity = Activity(used =DJO_CURATED_FEATURES, 
+                        executed = GIT_URL,
+                        name = content$name,
+                        description = content$description)
+    synStore(file, activity = activity)
+    unlink(content$output_filename)
 })
 
 
@@ -788,16 +820,39 @@ psa_data <- fetch_results(
     metrics_list, 
     "PsA vs PsO ({auc})", "PsA")
 
-output_ref <- c("djo_model_psa_vs_pso_md_fpr_tpr.tsv",
-                "djo_model_psa_vs_pso_auc_iter.tsv")
+
+output_ref <- list(
+    md_fpr_tpr = list(
+        output_filename = "djo_model_psa_vs_pso_md_fpr_tpr.tsv",
+        analysisType = "digital jar open",
+        analysisSubtype = "psa vs pso - median iter",
+        pipelineStep = "prediction",
+        name = "get FPR/TPR",
+        description = "retrieve median FPR/TPR across iteration for ROC-AUC curve plots"),
+    auc_iter = list(
+        output_filename = "djo_model_psa_vs_pso_auc_iter.tsv",
+        analysisType = "digital jar open",
+        analysisSubtype = "psa vs pso - auc iter",
+        pipelineStep = "prediction",
+        name = "get AUC across 1k folds",
+        description = "Retrieve AUC across 1k folds to check stability"))
 psa_data$md_fpr_tpr %>% 
-    readr::write_tsv(output_ref[[1]])
+    readr::write_tsv(output_ref$md_fpr_tpr$output_filename)
 psa_data$auc_iter %>% 
-    readr::write_tsv(output_ref[[2]])
-purrr::map(output_ref, function(filename){
-    file <- synapser::File(filename, parent = "syn26842135")
-    synStore(file)
-    unlink(filename)
+    readr::write_tsv(output_ref$auc_iter$output_filename)
+purrr::map(output_ref, function(content){
+    file <- synapser::File(
+        content$output_filename, 
+        parent = MODEL_PARENT_ID,
+        analysisType = content$analysisType,
+        analysisSubtype = content$analysisSubtype,
+        pipelineStep = content$pipelineStep)
+    activity = Activity(used =DJO_CURATED_FEATURES, 
+                        executed = GIT_URL,
+                        name = content$name,
+                        description = content$description)
+    synStore(file, activity = activity)
+    unlink(content$output_filename)
 })
 
 #save(AUROCs, AUPRCs, original.outputs, adjusted.outputs, file = "psorcast_outputs_updated_PsA_vs_PsO.RData", compress = TRUE)
@@ -866,8 +921,14 @@ boxplot(c2$AUPRCs[, c(1, 3)], ylim = auc.lim, ylab = "AUPRC",
 abline(h = p2, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 
@@ -908,8 +969,14 @@ boxplot(dat2$age ~ dat2$PsA,
         xlab = "PsA-without-UEI")
 mtext(side = 3, "(d)", at = 0.3, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 
@@ -945,8 +1012,14 @@ boxplot(ic$AUROCs.site,
 abline(h = 0.5, col = "red")
 mtext(side = 3, "(c)", at = 0.4, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 
@@ -967,8 +1040,14 @@ hist(ic$AUROCs.site.pvals[, 1], probability = TRUE, col = rgb(0, 0, 1, 0.5), add
 legend("topleft", legend = c("original", "shuffled"), text.col = c("darkblue", "darkgrey"), bty = "n")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 ## Figure S7
@@ -1000,8 +1079,14 @@ boxplot(dat1$total_rotation ~ dat1$site,
         xlab = "site")
 mtext(side = 3, "(c)", at = 0.5, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 ## Figure S12
@@ -1035,8 +1120,14 @@ boxplot(aux.fig,
 abline(h = 0, col = "red")
 mtext(side = 3, "(b)", at = 0.5, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 
@@ -1064,10 +1155,15 @@ boxplot(c2$AUROCs,
 abline(h = 0.5, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
-
 
 ## Figure S15
 nc <- 15
@@ -1089,8 +1185,14 @@ hist(c2$AUROCs.pvals[, 2], probability = TRUE, col = rgb(0, 1, 0, 0.5), add = TR
 legend("topright", legend = c("unadjusted", "adjusted", "shuffled"), text.col = c("darkblue", "darkgreen", "darkgrey"), bty = "n")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 ## Figure S16
@@ -1118,8 +1220,14 @@ boxplot(c2$AUPRCs,
 abline(h = p2, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 ## Figure S17
@@ -1144,8 +1252,14 @@ boxplot(sc2$CCCs.age,
 abline(h = 0, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 ## Figure S18
@@ -1172,10 +1286,15 @@ boxplot(aux.fig,
 abline(h = 0, col = "red")
 mtext(side = 3, "(b)", at = 0.5, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
-
 
 
 ###########################################
