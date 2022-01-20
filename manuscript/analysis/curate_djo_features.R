@@ -12,6 +12,7 @@ library(tidyverse)
 library(data.table)
 library(githubr)
 source("manuscript/utils/fetch_id_utils.R")
+source('manuscript/utils/helper_utils.R')
 
 synapser::synLogin()
 
@@ -158,6 +159,6 @@ main <- function(){
     
 }
 
-main()
+log_process(main(), SCRIPT_PATH)
 
 

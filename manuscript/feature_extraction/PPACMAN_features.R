@@ -17,27 +17,28 @@ library(tidyr)
 library(plyr)
 library(dplyr)
 source("manuscript/utils/feature_extraction_utils.R")
-source('manuscript/utils/processing_log_utils.R')
+source('manuscript/utils/helper_utils.R')
+source("manuscript/utils/fetch_id_utils.R")
 
 
 synapser::synLogin()
 
 # output reference
-PPACMAN_SYN_ID <- 'syn25006883'
-PARENT_SYN_ID <- 'syn26840744' # synId of folder to upload your file to
+PPACMAN_SYN_ID <- config::get("tables")$ppacman
+PARENT_SYN_ID <- SYN_ID_REF$feature_extraction$parent_id # synId of folder to upload your file to
 OUTPUT_FILE <- 'PPACMAN_assessor_features.tsv' # name your file
 
 # Github link
-GIT_TOKEN_PATH <- config::get("git")$token_path
-GIT_REPO <- config::get("git")$repo
-githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-SCRIPT_PATH <- 'feature_extraction/PPACMAN_features.R'
-GIT_URL <- getPermlink(
-    repository = getRepo(
-        repository = GIT_REPO, 
-        ref="branch", 
-        refName='main'), 
-    repositoryPath = SCRIPT_PATH)
+SCRIPT_PATH <- file.path(
+    'manuscript',
+    'feature_extraction', 
+    "PPACMAN_features.R")
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main')
 
 main <- function(){
     ppacman.syn <- synapser::synTableQuery(paste0(

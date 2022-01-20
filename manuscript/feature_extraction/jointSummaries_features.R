@@ -17,35 +17,36 @@ library(data.table)
 library(tidyverse)
 library(githubr)
 source("manuscript/utils/feature_extraction_utils.R")
-source('manuscript/utils/processing_log_utils.R')
 source("manuscript/utils/fetch_id_utils.R")
+source("manuscript/utils/helper_utils.R")
 synLogin()
 
 ############################
 # Global Vars
 ############################
-PARENT_SYN_ID <- "syn26840744"
-ERROR_LOG_SYN_ID <- "syn26844313"
+PARENT_SYN_ID <- SYN_ID_REF$feature_extraction$parent_id
+ERROR_LOG_SYN_ID <- SYN_ID_REF$removed_data$parent_id
 VISIT_REF <- SYN_ID_REF$visit_summary
-PPACMAN_TBL_ID <- "syn22337133"
-VISIT_REF_ID <- "syn25825626"
+PPACMAN_TBL_ID <- SYN_ID_REF$feature_extraction$ppacman
+VISIT_REF_ID <- SYN_ID_REF$feature_extraction$visit_summary
 FILE_COLUMNS <- "summary.json"
-JOINT_LOCATION <- c("knee", "hip", "ankle", 
-                    "wrist", "elbow", "shoulder")
+JOINT_LOCATION <- c("knee", "hip", 
+                    "ankle", "wrist", 
+                    "elbow", "shoulder")
 OUTPUT_FILE <- "joint_counts_comparison.tsv"
 JOINT_TBL_REF <- list(
     dig_jc = list(
         prefix = "dig_jc",
-        syn_id = "syn22281786",
+        syn_id = config::get("tables")$joint_counting,
         output_filename = "dig_jc_features.tsv"),
     gs_jc = list(
         prefix = "gs_jc",
-        syn_id = "syn22281781",
+        syn_id = config::get("tables")$md_joint_counting,
         output_filename = "gs_jc_features.tsv"
     ),
     gs_swell = list(
         prefix = "gs_swell",
-        syn_id = "syn22281780",
+        syn_id = config::get("tables")$md_joint_swelling,
         output_filename = "gs_swell_features.tsv"
     )
 )
@@ -54,16 +55,17 @@ JOINT_TBL_REF <- list(
 ############################
 # Git Reference
 ############################
-SCRIPT_PATH <- file.path('feature_extraction', "jointSummaries_features.R")
-GIT_TOKEN_PATH <- config::get("git")$token_path
-GIT_REPO <- config::get("git")$repo
-githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-GIT_URL <- getPermlink(
-    repository = getRepo(
-        repository = GIT_REPO, 
-        ref="branch", 
-        refName='main'), 
-    repositoryPath = SCRIPT_PATH)
+# Github link
+SCRIPT_PATH <- file.path(
+    'manuscript',
+    'feature_extraction', 
+    "jointSummaries_features.R")
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main')
 
 
 #' function to group each identifiers 

@@ -21,27 +21,18 @@ library(tidyr)
 library(plyr)
 library(dplyr)
 source("manuscript/utils/feature_extraction_utils.R")
-source('manuscript/utils/processing_log_utils.R')
+source('manuscript/utils/helper_utils.R')
+source("manuscript/utils/fetch_id_utils.R")
 synapser::synLogin()
 
 
 ####################
 # Global Variables
 ####################
-PARENT_SYN_ID <- "syn26840744"
-ERROR_LOG_SYN_ID <- "syn26844313"
+PARENT_SYN_ID <- SYN_ID_REF$feature_extraction$parent_id
+ERROR_LOG_SYN_ID <- SYN_ID_REF$removed_data$parent_id
 TIME_THRESH <- lubridate::ddays(30)
-TBL_REF <- list(
-    ppacman_assessor = 'syn25006883',
-    joint_counting = 'syn22281786',
-    md_joint_counting = 'syn22281781',
-    md_joint_swelling = 'syn22281780',
-    foot_imaging = 'syn22281750',
-    hand_imaging = 'syn22281749',
-    area_photo = 'syn22281748',
-    jar_opener = 'syn22281747',
-    psoriasis_draw = 'syn22281746',
-    walk_30s = 'syn22281384')
+TBL_REF <- config::get("tables")
 OUTPUT_REF <- list(
     summary = "psorcast_summary_table.tsv",
     visit_timestamp_reference = "visit_timestamp_reference.tsv",
@@ -51,16 +42,17 @@ OUTPUT_REF <- list(
 ############################
 # Git Reference
 ############################
-SCRIPT_PATH <- file.path('feature_extraction', "get_visit_summary.R")
-GIT_TOKEN_PATH <- config::get("git")$token_path
-GIT_REPO <- config::get("git")$repo
-githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-GIT_URL <- getPermlink(
-    repository = getRepo(
-        repository = GIT_REPO, 
-        ref="branch", 
-        refName='main'), 
-    repositoryPath = SCRIPT_PATH)
+# Github link
+SCRIPT_PATH <- file.path(
+    'manuscript',
+    'feature_extraction', 
+    "get_visit_summary.R")
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main')
 
 ########################
 ## get curated tables
@@ -104,6 +96,7 @@ get_psorcast_tables <- function(tbl_id){
                 "id")))
 }
 
+#' Function to fetch single-visit user
 get_single_visit_timestamp_ref <- function(data){
     data <- data %>% dplyr::mutate(visit_num = 1)
     all_data <- data %>%
@@ -119,6 +112,7 @@ get_single_visit_timestamp_ref <- function(data){
         dplyr::mutate(has_multiple_visit = FALSE)
 }
 
+#' Function to fetch user with multiple visits
 get_multiple_visit_timestamp_ref <- function(data){
     data %>%
         dplyr::group_by(participantId) %>%
@@ -134,6 +128,9 @@ get_multiple_visit_timestamp_ref <- function(data){
                       max_createdOn)
 }
 
+#' Curate user with multiple visit by
+#' fuzzy-joining based on time-threshold 30 days
+#' between ppacman clinical assessment
 curate_nested_user_multiple_visit <- function(data){
     data %>%
         dplyr::arrange(createdOn) %>%

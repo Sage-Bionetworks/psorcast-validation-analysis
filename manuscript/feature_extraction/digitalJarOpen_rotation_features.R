@@ -17,36 +17,35 @@ library(tidyr)
 library(plyr)
 library(dplyr)
 source("manuscript/utils/feature_extraction_utils.R")
-source('manuscript/utils/processing_log_utils.R')
+source('manuscript/utils/helper_utils.R')
 source("manuscript/utils/fetch_id_utils.R")
 
 synapser::synLogin()
 
 # source table ids
-DIG_JAR_OPEN_TBL_ID <- 'syn22281747'
-PPACMAN_TBL_ID <- SYN_ID_REF$ppacman
-VISIT_REF_ID <- SYN_ID_REF$visit_summary
+DIG_JAR_OPEN_TBL_ID <- config::get("tables")$jar_opener
+PPACMAN_TBL_ID <- SYN_ID_REF$feature_extraction$ppacman
+VISIT_REF_ID <- SYN_ID_REF$feature_extraction$visit_summary
 OUTPUT_REF <- list(
     feature = list(
         output = 'djo_rotation_features.tsv',
-        parent = "syn26840744"),
+        parent = SYN_ID_REF$feature_extraction$parent_id),
     log = list(
         output = 'error_log_djo_rotation_features.tsv',
-        parent = "syn26844313")
+        parent = SYN_ID_REF$removed_data$parent_id)
 )
 
 # Github link
-SCRIPT_PATH <- file.path('feature_extraction', 
-                         "digitalJarOpen_rotation_features.R")
-GIT_TOKEN_PATH <- config::get("git")$token_path
-GIT_REPO <- config::get("git")$repo
-githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-GIT_URL <- getPermlink(
-    repository = getRepo(
-        repository = GIT_REPO, 
-        ref="branch", 
-        refName='main'), 
-    repositoryPath = SCRIPT_PATH)
+SCRIPT_PATH <- file.path(
+    'manuscript',
+    'feature_extraction', 
+    "digitalJarOpen_rotation_features.R")
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main')
 
 main <- function(){
     #' get visit reference and curated ppacman table

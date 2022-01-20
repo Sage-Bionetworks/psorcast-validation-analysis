@@ -2,7 +2,7 @@ DATA_CURATION_PATH=curate_tables
 FEATURE_EXTRACTION_PATH=feature_extraction
 ANALYSIS_PATH=analysis
 
-pipeline: update logs clean tables features manuscript markdown
+pipeline: update logs clean tables features markdown
 
 update:
 	git pull
@@ -39,9 +39,13 @@ features:
 	Rscript $(FEATURE_EXTRACTION_PATH)/walk30s_features.R || exit 1
 	Rscript $(FEATURE_EXTRACTION_PATH)/psorcast_merged_features.R || exit 1
 
-manuscript:
-	Rscript $(ANALYSIS_PATH)/manuscript_curation/gs_vs_dig_jc_comparison.R || exit 1
-	Rscript $(ANALYSIS_PATH)/manuscript_curation/get_curated_features.R || exit 1
+generate_manuscript:
+	Rscript manuscript/feature_extraction/PPACMAN_features.R || exit 1
+	Rscript manuscript/feature_extraction/get_visit_summary.R || exit 1
+	Rscript manuscript/feature_extraction/psoriasis_draw_bsa_features.R || exit 1
+	Rscript manuscript/feature_extraction/digitalJarOpen_rotation_features.R || exit 1
+	Rscript manuscript/feature_extraction/jointSummaries_features.R || exit 1
+	Rscript manuscript/feature_extraction/psorcast_merged_features.R || exit 1
 
 misc:
 	Rscript $(ANALYSIS_PATH)/handImaging_analysis/curateSwollenJointsDactyliticFingers.R || exit 1

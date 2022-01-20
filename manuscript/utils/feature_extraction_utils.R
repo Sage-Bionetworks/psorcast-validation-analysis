@@ -144,19 +144,6 @@ get_table <- function(synapse_tbl,
     return(result)
 }
 
-save_to_synapse <- function(data, 
-                            output_filename, 
-                            parent,
-                            ...){
-    data %>% 
-        readr::write_tsv(output_filename)
-    file <- File(output_filename, parent =  parent)
-    entity <- synStore(file, activity = Activity(...))
-    unlink(output_filename)
-    return(entity)
-}
-
-
 #' Function to search for gyroscope and accelerometer 
 #' sensors in a time-series 
 #' 
@@ -185,46 +172,4 @@ search_gyro_accel <- function(ts){
                             dplyr::select(t,x,y,z)))
     return(ts_list)
 }
-
-# process parallelly using mhealthtools
-parallel_process_samples <- function(data, funs){
-    features <- furrr::future_pmap_dfr(list(
-        recordId = data$recordId, 
-        fileColumnName = data$fileColumnName,
-        filePath = data$filePath), function(recordId, fileColumnName, filePath){
-            filePath %>% 
-                list() %>%
-                purrr::pmap_dfr(funs) %>%
-                dplyr::mutate(
-                    recordId = recordId,
-                    fileColumnName = fileColumnName) %>%
-                dplyr::select(recordId, fileColumnName, everything())})
-    data %>% 
-        dplyr::inner_join(features, by = c("recordId", "fileColumnName"))
-}
-
-log_removed_data <- function(all_data, subset_data){
-    all_data %>% 
-        dplyr::filter(!recordId %in% 
-                          unique(subset_data$recordId)) %>% 
-        dplyr::group_by(recordId) %>% 
-        dplyr::summarise_all(last) %>% 
-        dplyr::select(recordId, error) %>% 
-        dplyr::mutate(error = ifelse(
-            is.na(error), 
-            "removed from ppacman joining", 
-            error))
-}
-
-
-get_github_url <- function(git_token_path, 
-                           git_repo,
-                           script_path,
-                           ...){
-    setGithubToken(readLines(git_token_path))
-    githubr::getPermlink(
-        git_repo, 
-        repositoryPath = script_path,
-        ...)
-}
-
+ 

@@ -2,3 +2,14 @@ default:
     git:
         repo: "arytontediarjo/psorcast-validation-analysis"
         token_path: "~/git_token.txt"
+    tables:
+        ppacman_assessor: 'syn25006883'
+        joint_counting: 'syn22281786'
+        md_joint_counting: 'syn22281781'
+        md_joint_swelling: 'syn22281780'
+        foot_imaging: 'syn22281750'
+        hand_imaging: 'syn22281749'
+        area_photo: 'syn22281748'
+        jar_opener: 'syn22281747'
+        psoriasis_draw: 'syn22281746'
+        walk_30s: 'syn22281384'
