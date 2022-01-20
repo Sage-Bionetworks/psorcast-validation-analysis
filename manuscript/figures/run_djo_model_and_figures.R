@@ -896,8 +896,22 @@ boxplot(c2$AUROCs[, c(1, 3)], ylim = auc.lim, ylab = "AUROC",
 abline(h = 0.5, col = "red")
 mtext(side = 3, "(b)", at = 0, cex = lcex)
 dev.off()
-file <- synapser::File(figpath, parent = PARENT_ID)
-synapser::synStore(file)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
+file <- synapser::File(figpath, 
+                       parent = PARENT_ID,
+                       analysisType = "digital jar open",
+                       pipelineStep = "figures",
+                       task = "digital jar open")
+activity <- Activity(used = DJO_CURATED_FEATURES,
+                     executed = GIT_URL)
+synapser::synStore(file, activity = activity)
 unlink(figpath)
 
 

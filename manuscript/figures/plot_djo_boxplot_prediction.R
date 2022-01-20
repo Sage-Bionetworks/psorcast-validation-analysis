@@ -143,17 +143,18 @@ purrr::map(OUTPUT_REF, function(content){
     ggsave(content$output_file, 
            content$plot, 
            width = 8)
-    file = synapser::File(
+    file <- synapser::File(
         content$output_file, 
         parent = PARENT_ID,
         analysisType = content$analysisType,
         analysisSubtype = content$analysisSubtype,
-        pipelineStep = content$pipelineStep,
+        pipelineStep = content$pipelineStep)
+    activity <- Activity(
+        used = content$used,
+        executed = GIT_URL,
         name = content$name,
         description = content$description)
-    activity = Activity(used = content$used,
-                        executed = GIT_URL)
-    synStore(file)
+    synStore(file, activity = activity)
     unlink(content$output_file)
 })
 
