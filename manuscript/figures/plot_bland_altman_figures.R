@@ -17,7 +17,7 @@ source("manuscript/utils/fetch_id_utils.R")
 source("manuscript/utils/feature_extraction_utils.R")
 synLogin()
 
-
+# get merged features
 MERGED_FEATURES <- SYN_ID_REF$feature_extraction$merged
 PARENT_ID <- SYN_ID_REF$figures$parent
 OUTPUT_REF <- list(
@@ -47,6 +47,13 @@ GIT_URL <- get_github_url(
     refName='main'
 )
 
+#' Function to plot bland altman
+#' @param data dataframe 
+#' @param dig_measure digital measurement
+#' @param gs_measure gold-standard measurement
+#' @param label_x_coord x-coordinate label
+#' @param label_y_coord y-coordinate label
+#' @return ggplot object bland-altman
 plot_bland_altman <- function(data, 
                               dig_measure, 
                               gs_measure,
@@ -80,9 +87,10 @@ plot_bland_altman <- function(data,
     return(bland.altman)
 }
 
-
-
+# get dataset
 data <-  fread(synGet(MERGED_FEATURES)$path)
+
+# get digital joint count vs gold-standard joint count
 OUTPUT_REF$tjc$plot <- plot_bland_altman(
     data %>%
         tidyr::drop_na(dig_jc_counts, gs_jc_counts),
@@ -99,6 +107,7 @@ OUTPUT_REF$tjc$plot <- plot_bland_altman(
         family = "sans", vjust = -1, 
         size = 20, margin=margin(0,0,60,0)))
 
+# get psoriasis draw in-clinic vs digital bland-altman
 OUTPUT_REF$draw$plot <- plot_bland_altman(
     data %>% 
         dplyr::mutate(dig_bsa = dig_bsa * 100) %>%
@@ -116,7 +125,7 @@ OUTPUT_REF$draw$plot <- plot_bland_altman(
         family = "sans", vjust = -1, 
         size = 20, margin=margin(0,0,60,0)))
 
-
+# iteratively save to synapse
 purrr::map(OUTPUT_REF, function(content){
     ggsave(content$output_file, content$plot)
     file = synapser::File(
