@@ -13,6 +13,9 @@ logs:
 clean:
 	rm -f logs/pipeline.log;
 	rm -f logs/error.log;
+	
+authenticate:
+	Rscript utils/authenticate.R ${PARAMS}
 
 
 tables:
