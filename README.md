@@ -18,19 +18,36 @@ To run this repository, you will be required to have several credentials:
 ### HOW-TO:
 We will be using docker for reproducing this analysis, we will require your Synapse/Github credentials (in file location) to be placed in .env so that as we build the container, it will contain all the required credentials.
 
-#### a. Rerunning Pipeline using Docker:
+## Running in Docker (Recommended):
+Docker image is designed to build R & Python Environment and deployed in a container. Environment in R uses `renv` and Python `virtualenv` package management. 
+
+### 1. Clone the repository: 
 ```zsh
-docker pull arytontediarjo/psorcast-validation-analysis
+git clone https://github.com/Sage-Bionetworks/psorcast-validation-manuscript.git
+```
+### 2. Build Image:
+```zsh
+docker build -t 'psorcast-manuscript' .
+```
+### 3. Run Image as Container:
+```zsh
+docker run -itd psorcast-manuscript
+```
+Notes: Argument -itd is used to make sure that container is run in detached mode (not removed after running once)
 
-docker run -v <SYNAPSE_CONFIG_PATH>:/root/.synapseConfig\ 
-            -v <SYNAPSE_CACHE_PATH>:/root/.synapseCache\
-            -v <GIT_TOKEN_PATH>:/git_token.txt\
-            -d arytontediarjo/psorcast-validation-analysis
+### 4. Execute Container:
+#### Check Container ID:
+```zsh
+docker ps -a
+```
+Using this command, it will output container that contains the saved image. Fetch the container ID to proceed.
 
-docker exec <CONTAINER_ID> make pipeline
+#### Fetch container ID and create Synapse Authentication:
+```zsh
+docker exec -it <CONTAINER_ID> make authenticate PARAMS="-u <username> -p <password> -g <git_token>"
 ```
 
-#### b. RStudio Environment 
+## Using RStudio Environment 
 
 ##### i. Git Clone
 ```zsh
