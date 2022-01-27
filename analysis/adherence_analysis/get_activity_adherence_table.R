@@ -12,9 +12,10 @@ source("utils/feature_extraction_utils.R")
 
 synapser::synLogin()
 
-TABLE_NAME <- "PsorcastAdherence-v1"
+TABLE_NAME <- "PsorcastAdherence"
 PROJECT_ID <- "syn22276946"
 DESCRIPTION <- "Measure adherence from psorcast project"
+SCRIPT_PATH <- "analysis/adherence_analysis/get_activity_adherence_table.R"
 
 TABLE_LIST <- list(
     "PsoriasisDraw-v4" = "syn26428811",
@@ -48,6 +49,7 @@ get_activity_tables <- function(){
         tbl_df <- get_table(tbl_id, "studyStates.json")
         tbl_df %>%
             dplyr::mutate(tableName = tbl_name) %>%
+            dplyr::mutate(dataGroups = replace_na(dataGroups, "")) %>%
             dplyr::filter(!stringr::str_detect(dataGroups, "test_user")) %>%
             dplyr::select(recordId, 
                           dataGroups,
@@ -68,8 +70,13 @@ parse_study_state <- function(data){
         tidyr::unnest(studyStates) %>% 
         tidyr::drop_na() %>% 
         #' handle duplicate by extracting the first occurence
-        dplyr::group_by(recordId, createdOn, healthCode, tableName) %>% 
-        dplyr::summarise(weekInStudy = first(weekInStudy)) %>% 
+        dplyr::group_by(recordId,
+                        dataGroups,
+                        createdOn, 
+                        healthCode, 
+                        tableName) %>% 
+        dplyr::summarise(weekInStudy = first(weekInStudy),
+                         startDate = first(startDate)) %>% 
         dplyr::ungroup()
 }
 
@@ -84,7 +91,9 @@ pivot_activity_tbl <- function(data){
         tidyr::pivot_wider(names_from = tableName, 
                            values_from = createdOn,
                            id_cols = all_of(c("healthCode", 
-                                              "weekInStudy")),
+                                              "weekInStudy",
+                                              "dataGroups",
+                                              "startDate")),
                            values_fill = NA_character_,
                            values_fn = max)
 }
@@ -96,6 +105,8 @@ pivot_activity_tbl <- function(data){
 store_schema <- function(table_name, project_id){
     cols <- list(
         Column(name = "healthCode", columnType = "STRING", maximumSize = 50),
+        Column(name = "startDate", columnType = "DATE"),
+        Column(name = "dataGroups", columnType = "STRING"),
         Column(name = "weekInStudy", columnType = "INTEGER"),
         Column(name = "HandImaging-v2", columnType = "DATE"),
         Column(name = "PsoriasisDraw-v4", columnType = "DATE"),
@@ -135,6 +146,15 @@ update_synapse_table <- function(data, table_name, project_id, join_keys){
 }
 
 main <- function(){
+    #' get github token
+    git_url <- get_github_url(
+        git_token_path = config::get("git")$token_path,
+        git_repo = config::get("git")$repo,
+        script_path = SCRIPT_PATH,
+        ref="branch", 
+        refName='main'
+    )
+    
     #' get all activity tables (row-binded)
     data <- get_activity_tables() %>% 
         parse_study_state() %>%
@@ -151,6 +171,11 @@ main <- function(){
     newTable <- synStore(Table(
         table_map$table_id, 
         table_map$newData))
+    
+    #' set provenance
+    activity = Activity(used = TABLE_LIST %>% unname() %>% unlist(),
+                        executed = git_url)
+    synSetProvenance(table_map$table_id, activity = activity)
 }
 
 main()

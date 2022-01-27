@@ -25,8 +25,9 @@ library(purrr)
 library(githubr)
 library(readr)
 library(data.table)
-source("utils/feature_extraction_utils.R")
-source('utils/processing_log_utils.R')
+source("manuscript/utils/feature_extraction_utils.R")
+source('manuscript/utils/helper_utils.R')
+source("manuscript/utils/fetch_id_utils.R")
 
 synapser::synLogin()
 
@@ -34,16 +35,16 @@ synapser::synLogin()
 # Global Variables
 ##############################
 ## source table ids
-PSORIASIS_DRAW_TBL_ID <- "syn22281746"
-PPACMAN_TBL_ID <- "syn22337133"
-VISIT_REF_ID <- "syn25825626"
+PSORIASIS_DRAW_TBL_ID <- config::get("tables")$psoriasis_draw
+PPACMAN_TBL_ID <- SYN_ID_REF$feature_extraction$ppacman
+VISIT_REF_ID <- SYN_ID_REF$feature_extraction$visit_summary
 OUTPUT_REF <- list(
     feature = list(
         output = "psoriasisDraw_features.tsv",
-        parent = "syn22336716"),
+        parent = SYN_ID_REF$feature_extraction$parent_id),
     log = list(
         output = "error_log_psoriasisDraw_features.tsv",
-        parent = "syn25832341")
+        parent = SYN_ID_REF$removed_data$parent_id)
     )
 ## list of digital body surface multipliers (percentage %)
 ABOVE_WAIST_FRONT_WEIGHT<- 25.6873160187267/100
@@ -54,17 +55,16 @@ BELOW_WAIST_BACK_WEIGHT <- 25.7953965305613/100
 ##############################
 # Outputs
 ##############################
-GIT_TOKEN_PATH <- config::get("git")$token_path
-GIT_REPO <- config::get("git")$repo
-SCRIPT_PATH <- file.path('feature_extraction', "psoriasis_draw_bsa_features.R")
-setGithubToken(
-    readLines(GIT_TOKEN_PATH))
-GIT_URL <- getPermlink(
-    repository = getRepo(
-        repository = GIT_REPO, 
-        ref="branch", 
-        refName='main'), 
-    repositoryPath = SCRIPT_PATH)
+SCRIPT_PATH <- file.path(
+    'manuscript',
+    'feature_extraction', 
+    "psoriasis_draw_bsa_features.R")
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main')
 
 ##############################
 # Helper
@@ -120,20 +120,33 @@ main <- function(){
     error_log <- log_removed_data(all_pso_draw_table, pso_draw_table)
     
     #' save pso draw dable
-    save_to_synapse(data = pso_draw_table,
-                    output_filename = OUTPUT_REF$feature$output,
-                    parent = OUTPUT_REF$feature$parent,
-                    name = "get psodraw features",
-                    executed = GIT_URL,
-                    used = PSORIASIS_DRAW_TBL_ID)
+    entity <- save_to_synapse(
+        data = pso_draw_table,
+        output_filename = OUTPUT_REF$feature$output,
+        parent = OUTPUT_REF$feature$parent,
+        name = "get psodraw features",
+        executed = GIT_URL,
+        used = PSORIASIS_DRAW_TBL_ID)
+    #' set annotations
+    synSetAnnotations(
+        entity$properties$id,
+        analysisType = "psoriasis draw",
+        pipelineStep = "feature extraction",
+        task = "psoriasis draw")
     
     #' save pso draw error rlog
-    save_to_synapse(data = error_log,
-                    output_filename = OUTPUT_REF$log$output,
-                    parent = OUTPUT_REF$log$parent,
-                    name = "get psodraw features - logs",
-                    executed = GIT_URL,
-                    used = PSORIASIS_DRAW_TBL_ID)
+    entity <- save_to_synapse(
+        data = error_log,
+        output_filename = OUTPUT_REF$log$output,
+        parent = OUTPUT_REF$log$parent,
+        name = "get psodraw features - logs",
+        executed = GIT_URL,
+        used = PSORIASIS_DRAW_TBL_ID)    #' set annotations
+    synSetAnnotations(
+        entity$properties$id,
+        analysisType = "psoriasis draw",
+        pipelineStep = "removed data log",
+        task = "psoriasis draw")
 }
 
 log_process(main(), SCRIPT_PATH)

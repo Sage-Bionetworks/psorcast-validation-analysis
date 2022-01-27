@@ -581,6 +581,11 @@
       "Repository": "CRAN",
       "Hash": "4d243a9c10b00589889fe32314ffd902"
     },
+    "getopt": {
+      "Package": "getopt",
+      "Version": "1.20.3",
+      "Source": "Repository"
+    },
     "ggExtra": {
       "Package": "ggExtra",
       "Version": "0.9",
@@ -1072,6 +1077,11 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "f1b1ca1254ccb485dccc9c0dc65a2c36"
+    },
+    "optparse": {
+      "Package": "optparse",
+      "Version": "1.7.1",
+      "Source": "Repository"
     },
     "pROC": {
       "Package": "pROC",

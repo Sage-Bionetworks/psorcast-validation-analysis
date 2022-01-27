@@ -2,7 +2,7 @@ DATA_CURATION_PATH=curate_tables
 FEATURE_EXTRACTION_PATH=feature_extraction
 ANALYSIS_PATH=analysis
 
-pipeline: update logs clean tables features manuscript markdown
+pipeline: update logs clean tables features markdown
 
 update:
 	git pull
@@ -13,6 +13,9 @@ logs:
 clean:
 	rm -f logs/pipeline.log;
 	rm -f logs/error.log;
+	
+authenticate:
+	Rscript utils/authenticate.R ${PARAMS}
 
 
 tables:
@@ -39,12 +42,26 @@ features:
 	Rscript $(FEATURE_EXTRACTION_PATH)/walk30s_features.R || exit 1
 	Rscript $(FEATURE_EXTRACTION_PATH)/psorcast_merged_features.R || exit 1
 
-manuscript:
-	Rscript $(ANALYSIS_PATH)/manuscript_curation/gs_vs_dig_jc_comparison.R || exit 1
-	Rscript $(ANALYSIS_PATH)/manuscript_curation/get_curated_features.R || exit 1
+generate_manuscript:
+	Rscript manuscript/feature_extraction/PPACMAN_features.R || exit 1
+	Rscript manuscript/feature_extraction/get_visit_summary.R || exit 1
+	Rscript manuscript/feature_extraction/psoriasis_draw_bsa_features.R || exit 1
+	Rscript manuscript/feature_extraction/digitalJarOpen_rotation_features.R || exit 1
+	Rscript manuscript/feature_extraction/jointSummaries_features.R || exit 1
+	Rscript manuscript/feature_extraction/psorcast_merged_features.R || exit 1
+	Rscript manuscript/analysis/curate_djo_features.R || exit 1
+	Rscript manuscript/analysis/gs_vs_dig_jc_comparison.R || exit 1
+	Rscript manuscript/analysis/get_joint_summary.R || exit 1
+	Rscript manuscript/figures/plot_bland_altman_figures.R || exit 1
+	Rscript manuscript/figures/run_djo_model_and_figures.R || exit 1
+	Rscript manuscript/figures/plot_djo_boxplot_prediction.R || exit 1
 
 misc:
 	Rscript $(ANALYSIS_PATH)/handImaging_analysis/curateSwollenJointsDactyliticFingers.R || exit 1
 	
 markdown:
 	Rscript $(ANALYSIS_PATH)/knit_markdowns.R || exit 1
+	
+adherence:
+	Rscript analysis/adherence_analysis/get_activity_adherence_table.R || exit 1
+	Rscript analysis/adherence_analysis/get_incentives_adherence_metrics.R || exit 1

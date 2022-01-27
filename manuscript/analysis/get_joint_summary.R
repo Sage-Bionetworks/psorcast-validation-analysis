@@ -3,42 +3,40 @@
 # joint counts for PSA users
 # @author: aryton.tediarjo@sagebase.org
 ############################################################
-
-# import libraries
 library(synapser)
 library(data.table)
 library(tidyverse)
-library(patchwork)
-library(ggplot2)
 library(jsonlite)
-synLogin()
-source("utils/feature_extraction_utils.R")
+source("manuscript/utils/feature_extraction_utils.R")
+source("manuscript/utils/fetch_id_utils.R")
+source("manuscript/utils/helper_utils.R")
 
+synapser::synLogin()
 
 ############################
 # Global Vars
 ############################
-PARENT_SYN_ID <- "syn25704998"
-GS_JOINT_COUNT <- "syn22281781"
-GS_JOINT_SWELL <- "syn22281780"
-PPACMAN_TBL_ID <- "syn22337133"
-VISIT_REF_ID <- "syn25825626"
+PARENT_SYN_ID <- SYN_ID_REF$curated_features$parent
+GS_JOINT_COUNT <- config::get("tables")$md_joint_counting
+GS_JOINT_SWELL <- config::get("tables")$md_joint_swelling
+PPACMAN_TBL_ID <- SYN_ID_REF$feature_extraction$ppacman
+VISIT_REF_ID <- SYN_ID_REF$feature_extraction$visit_summary
 FILE_COLUMNS <- "summary.json"
 OUTPUT_FILE <- "joint_avg_reported.tsv"
 
 ############################
 # Global Vars
 ############################
-SCRIPT_NAME <- "get_joint_summary.R"
-GIT_TOKEN_PATH <- config::get("git")$token_path
-GIT_REPO <- config::get("git")$repo
-githubr::setGithubToken(readLines(GIT_TOKEN_PATH))
-GIT_URL <- getPermlink(
-    repository = getRepo(
-        repository = GIT_REPO, 
-        ref="branch", 
-        refName='main'), 
-    repositoryPath = file.path('analysis/jointCounts_analysis', SCRIPT_NAME))
+SCRIPT_PATH <- file.path(
+    'manuscript',
+    'analysis',
+    'get_joint_summary.R')
+GIT_URL <- get_github_url(
+    git_token_path = config::get("git")$token_path,
+    git_repo = config::get("git")$repo,
+    script_path = SCRIPT_PATH,
+    ref="branch", 
+    refName='main')
 
 
 get_gs_joint_summaries <- function(){
@@ -88,14 +86,22 @@ main <- function(){
         summarize_joint_by_average() %>% 
         readr::write_tsv(OUTPUT_FILE)
     file <- synapser::File(OUTPUT_FILE, PARENT_SYN_ID)
-    synStore(file, 
-             activityName = "get each joint location summary",
+    entity <- synStore(file, 
+                       activityName = "get each joint location summary",
              used = c(PPACMAN_TBL_ID,
                       VISIT_REF_ID,
                       GS_JOINT_SWELL, 
                       GS_JOINT_COUNT), 
              executed = GIT_URL)
     unlink(OUTPUT_FILE)
+    
+    #' add annotation
+    synSetAnnotations(
+        entity$properties$id,
+        analysisType = "joint counts analysis",
+        analysisSubtype = "average joint reports",
+        pipelineStep = "feature curation",
+        task = "gold-standard joint count")
 }
 
 main()
