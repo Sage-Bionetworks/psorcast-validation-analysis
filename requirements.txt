@@ -59,7 +59,8 @@ tqdm==4.61.1
 tsfresh==0.18.0
 urllib3==1.26.5
 wrapt==1.12.1
-zict==2.0.0absl-py==0.13.0
+zict==2.0.0
+absl-py==0.13.0
 astunparse==1.6.3
 attr==0.3.1
 attrs==21.2.0
