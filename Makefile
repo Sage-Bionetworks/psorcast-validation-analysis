@@ -58,3 +58,7 @@ misc:
 	
 markdown:
 	Rscript $(ANALYSIS_PATH)/knit_markdowns.R || exit 1
+	
+adherence:
+	Rscript analysis/adherence_analysis/get_activity_adherence_table.R || exit 1
+	Rscript analysis/adherence_analysis/get_incentives_adherence_metrics.R || exit 1
