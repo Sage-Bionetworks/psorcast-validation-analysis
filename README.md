@@ -23,15 +23,15 @@ Docker image is designed to build R & Python Environment and deployed in a conta
 
 ### 1. Clone the repository: 
 ```zsh
-git clone https://github.com/Sage-Bionetworks/psorcast-validation-manuscript.git
+git clone https://github.com/Sage-Bionetworks/psorcast-validation-analysis.git
 ```
 ### 2. Build Image:
 ```zsh
-docker build -t 'psorcast-manuscript' .
+docker build -t 'psorcast-validation-analysis' .
 ```
 ### 3. Run Image as Container:
 ```zsh
-docker run -itd psorcast-manuscript
+docker run -itd psorcast-validation-analysis
 ```
 Notes: Argument -itd is used to make sure that container is run in detached mode (not removed after running once)
 
