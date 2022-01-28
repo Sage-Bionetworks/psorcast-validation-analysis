@@ -49,17 +49,12 @@ docker exec -it <CONTAINER_ID> make authenticate PARAMS="-u <username> -p <passw
 
 ## Using RStudio Environment 
 
-##### i. Git Clone
-```zsh
-git clone git clone https://github.com/Sage-Bionetworks/psorcast-validation-analysis.git
-```
-
-#### ii. Create Python Virtual Environment
+#### i. Create Python Virtual Environment
 ```zsh
 bash init_py_env.sh
 ```
 
-##### iii. Restore R Libraries using R's `renv` package
+##### ii. Restore R Libraries using R's `renv` package
 Some of the steps of the pipeline will use python and will be using R renv library for managing it (https://rstudio.github.io/renv/articles/python.html)
 ```R
 remotes::install_github('rstudio/renv@0.13.2')
