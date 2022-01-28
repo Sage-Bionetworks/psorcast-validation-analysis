@@ -3,6 +3,12 @@
 
 Welcome to Psorcast Validation Analysis Github Repository, this repository is purposed to be the analytical pipeline for Psorcast Validation Study.
 
+Maintainer: 
+- meghasyam@sagebase.org (sole maintainer)
+- aryton.tediarjo@sagebase.org (Retired from Sage as of Jan 28th 2022)
+- dan.webster@sagebase.org (Retired from Sage as of Nov 21st)
+
+
 ## Script Directories:
 - <b>curate_tables</b>: Folder for storing all scripts related to curating tables from Bridge to Validation Analysis Project
 - <b>feature_extraction</b>: Folder for storing all scripts related to extracting key features from previously extracted Synapse Tables
@@ -48,6 +54,7 @@ docker exec -it <CONTAINER_ID> make authenticate PARAMS="-u <username> -p <passw
 ```
 
 ## Using RStudio Environment 
+The process goes the same way in 
 
 ### i. Create Python Virtual Environment
 ```zsh
