@@ -21,21 +21,21 @@ We will be using docker for reproducing this analysis, we will require your Syna
 ## Running in Docker (Recommended):
 Docker image is designed to build R & Python Environment and deployed in a container. Environment in R uses `renv` and Python `virtualenv` package management. 
 
-### 1. Clone the repository: 
+### i. Clone the repository: 
 ```zsh
 git clone https://github.com/Sage-Bionetworks/psorcast-validation-analysis.git
 ```
-### 2. Build Image:
+### ii. Build Image:
 ```zsh
 docker build -t 'psorcast-validation-analysis' .
 ```
-### 3. Run Image as Container:
+### iii. Run Image as Container:
 ```zsh
 docker run -itd psorcast-validation-analysis
 ```
 Notes: Argument -itd is used to make sure that container is run in detached mode (not removed after running once)
 
-### 4. Execute Container:
+### iv. Execute Container:
 #### Check Container ID:
 ```zsh
 docker ps -a
@@ -49,12 +49,12 @@ docker exec -it <CONTAINER_ID> make authenticate PARAMS="-u <username> -p <passw
 
 ## Using RStudio Environment 
 
-#### i. Create Python Virtual Environment
+### i. Create Python Virtual Environment
 ```zsh
 bash init_py_env.sh
 ```
 
-##### ii. Restore R Libraries using R's `renv` package
+#### ii. Restore R Libraries using R's `renv` package
 Some of the steps of the pipeline will use python and will be using R renv library for managing it (https://rstudio.github.io/renv/articles/python.html)
 ```R
 remotes::install_github('rstudio/renv@0.13.2')
