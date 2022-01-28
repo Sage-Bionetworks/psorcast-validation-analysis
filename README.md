@@ -24,7 +24,6 @@ To run this repository, you will be required to have several credentials:
 - A .synapseConfig File for getting your credentials to synapse
 - A .synapseCache Folder for caching synapse files I/O
 
-### HOW-TO:
 We will be using docker for reproducing this analysis, we will require your Synapse/Github credentials (in file location) to be placed in .env so that as we build the container, it will contain all the required credentials.
 
 ## Running in Docker (Recommended):
