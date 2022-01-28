@@ -8,6 +8,9 @@ Maintainer:
 - aryton.tediarjo@sagebase.org (Retired from Sage as of Jan 28th 2022)
 - dan.webster@sagebase.org (Retired from Sage as of Nov 21st)
 
+Note: This repo used for dumping all our analyses.
+For rerunnable analysis related to **Psorcast Manuscript** please refer to this [git repository](https://github.com/Sage-Bionetworks/psorcast-validation-manuscript)
+
 
 ## Script Directories:
 - <b>curate_tables</b>: Folder for storing all scripts related to curating tables from Bridge to Validation Analysis Project
